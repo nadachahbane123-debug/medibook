@@ -141,7 +141,7 @@ class AppointmentModelTest(TestCase):
         )
         self.assertEqual(apt.status, 'pending')
         self.assertEqual(apt.urgency, 'low')
-        self.assertIn('patient=', str(apt) or 'RDV')
+        self.assertIn('RDV', str(apt))
 
     def test_can_cancel_future_appointment(self):
         future_date = timezone.now().date() + datetime.timedelta(days=7)
