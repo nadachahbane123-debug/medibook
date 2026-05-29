@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Ordonnance — {{ consultation.appointment.doctor }}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', Arial, sans-serif; color: #1e293b; background: #fff; }
+    .page { max-width: 800px; margin: 0 auto; padding: 40px; min-height: 100vh; position: relative; }
+
+    /* En-tête médecin */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 24px; border-bottom: 2px solid #0a1628; margin-bottom: 28px; }
+    .doctor-info .name { font-size: 20px; font-weight: 700; color: #0a1628; }
+    .doctor-info .specialty { color: #00b5a3; font-weight: 600; font-size: 14px; margin-top: 2px; }
+    .doctor-info .details { color: #64748b; font-size: 12px; margin-top: 6px; line-height: 1.6; }
+    .logo { text-align: right; }
+    .logo .brand { font-size: 22px; font-weight: 800; color: #0a1628; }
+    .logo .brand span { color: #00b5a3; }
+    .logo .license { color: #94a3b8; font-size: 11px; margin-top: 4px; }
+
+    /* Titre ordonnance */
+    .ordonnance-title {
+      text-align: center; font-size: 22px; font-weight: 700;
+      color: #0a1628; letter-spacing: 3px; text-transform: uppercase;
+      padding: 12px 0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+      margin-bottom: 24px;
+    }
+
+    /* Infos patient */
+    .patient-section { background: #f8fafc; border-radius: 10px; padding: 16px 20px; margin-bottom: 24px; display: flex; justify-content: space-between; }
+    .patient-section .field label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; }
+    .patient-section .field value { font-size: 14px; font-weight: 600; color: #0f172a; display: block; margin-top: 2px; }
+    .date-ref { text-align: right; }
+    .date-ref .ref { font-size: 12px; color: #94a3b8; }
+    .date-ref .date-val { font-size: 14px; font-weight: 600; color: #0a1628; }
+
+    /* Prescription */
+    .rx-symbol { font-size: 32px; font-weight: 700; color: #00b5a3; font-style: italic; margin-bottom: 16px; }
+    .prescription-box { min-height: 200px; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 20px 24px; margin-bottom: 20px; font-size: 14px; line-height: 2; white-space: pre-wrap; color: #1e293b; }
+
+    /* Diagnostic */
+    .diagnosis-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; }
+    .diagnosis-box .label { font-size: 11px; color: #3b82f6; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .diagnosis-box p { font-size: 13px; color: #1e293b; line-height: 1.7; }
+
+    /* Suivi */
+    .followup { display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; margin-bottom: 32px; font-size: 13px; color: #065f46; }
+
+    /* Signature */
+    .signature-area { display: flex; justify-content: flex-end; }
+    .signature-box { width: 260px; text-align: center; }
+    .signature-line { border-bottom: 1.5px solid #0a1628; margin-bottom: 6px; height: 60px; display: flex; align-items: flex-end; justify-content: center; }
+    .signature-box .sig-name { font-size: 13px; font-weight: 700; color: #0a1628; }
+    .signature-box .sig-title { font-size: 11px; color: #64748b; }
+
+    /* Footer */
+    .footer { position: absolute; bottom: 30px; left: 40px; right: 40px; border-top: 1px solid #e2e8f0; padding-top: 12px; display: flex; justify-content: space-between; }
+    .footer p { font-size: 10px; color: #94a3b8; }
+
+    /* Disclaimer */
+    .disclaimer { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 16px; font-size: 11px; color: #92400e; margin-bottom: 20px; }
+
+    /* Print */
+    .print-btn { position: fixed; top: 20px; right: 20px; background: #00b5a3; color: #0a1628; border: none; border-radius: 10px; padding: 10px 20px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    @media print { .print-btn { display: none; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨️ Imprimer / PDF</button>
+
+<div class="page">
+  <!-- En-tête -->
+  <div class="header">
+    <div class="doctor-info">
+      <div class="name">{{ consultation.appointment.doctor }}</div>
+      <div class="specialty">{{ consultation.appointment.specialty.icon }} {{ consultation.appointment.specialty.name }}</div>
+      <div class="details">
+        {{ consultation.appointment.doctor.cabinet_address }}<br>
+        Tél : {{ consultation.appointment.doctor.phone_professional }}<br>
+        {% if consultation.appointment.doctor.license_number %}N° Ordre : {{ consultation.appointment.doctor.license_number }}{% endif %}
+      </div>
+    </div>
+    <div class="logo">
+      <div class="brand">⚕ Medi<span>Book</span></div>
+      <div class="license">Ordonnance Médicale</div>
+    </div>
+  </div>
+
+  <!-- Titre -->
+  <div class="ordonnance-title">Ordonnance</div>
+
+  <!-- Patient & Date -->
+  <div class="patient-section">
+    <div>
+      <div class="field">
+        <label>Patient(e)</label>
+        <value>{{ consultation.appointment.patient.user.get_full_name }}</value>
+      </div>
+      {% if consultation.appointment.patient.user.date_of_birth %}
+      <div class="field" style="margin-top:8px">
+        <label>Date de naissance</label>
+        <value>{{ consultation.appointment.patient.user.date_of_birth|date:"d/m/Y" }}</value>
+      </div>
+      {% endif %}
+    </div>
+    <div class="date-ref">
+      <div class="ref">Date</div>
+      <div class="date-val">{{ consultation.created_at|date:"d/m/Y" }}</div>
+      <div class="ref" style="margin-top:8px">Réf. consultation</div>
+      <div class="date-val">CONS-{{ consultation.pk|stringformat:"05d" }}</div>
+    </div>
+  </div>
+
+  {% if consultation.diagnosis %}
+  <div class="diagnosis-box">
+    <div class="label">Diagnostic</div>
+    <p>{{ consultation.diagnosis }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Prescription -->
+  <div class="rx-symbol">Rx</div>
+  <div class="prescription-box">
+{{ consultation.prescription|default:"Aucune prescription renseignée." }}</div>
+
+  {% if consultation.treatment %}
+  <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 20px;margin-bottom:20px">
+    <div style="font-size:11px;color:#10b981;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Traitement recommandé</div>
+    <p style="font-size:13px;color:#1e293b;line-height:1.7">{{ consultation.treatment }}</p>
+  </div>
+  {% endif %}
+
+  {% if consultation.follow_up_date %}
+  <div class="followup">
+    <i class="fas fa-calendar-check" style="font-size:1.1rem"></i>
+    Consultation de suivi prévue le : <strong>{{ consultation.follow_up_date|date:"d/m/Y" }}</strong>
+  </div>
+  {% endif %}
+
+  <div class="disclaimer">
+    ⚠️ Cette ordonnance est établie sur la base de l'examen clinique du {{ consultation.created_at|date:"d/m/Y" }}.
+    Elle est valable 3 mois à compter de sa date d'émission.
+  </div>
+
+  <!-- Signature -->
+  <div class="signature-area">
+    <div class="signature-box">
+      <div class="signature-line"></div>
+      <div class="sig-name">{{ consultation.appointment.doctor }}</div>
+      <div class="sig-title">{{ consultation.appointment.specialty.name }}</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>MediBook · Plateforme médicale sécurisée · EMI Rabat 2026</p>
+    <p>Document généré le {{ generated_at|date:"d/m/Y à H:i" }}</p>
+  </div>
+</div>
+</body>
+</html>

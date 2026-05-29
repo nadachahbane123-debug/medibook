@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}{{ conversation.subject }}{% endblock %}
+
+{% block content %}
+<div style="max-width:800px;margin:0 auto;padding:1.5rem 1rem">
+
+  <!-- Header -->
+  <div style="background:var(--navy);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem">
+    <a href="{% url 'messaging:inbox' %}" style="color:rgba(255,255,255,0.6);text-decoration:none">
+      <i class="fas fa-arrow-left"></i>
+    </a>
+    <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-light));display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--navy);font-size:0.9rem">
+      {{ other_user.first_name|first|upper }}{{ other_user.last_name|first|upper }}
+    </div>
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;color:white;font-size:1rem">
+        {% if other_user.is_doctor %}Dr. {% endif %}{{ other_user.get_full_name }}
+      </div>
+      <div style="font-size:0.75rem;color:rgba(255,255,255,0.5)">{{ conversation.subject }}</div>
+    </div>
+    {% if conversation.appointment %}
+    <a href="{% url 'appointments:detail' conversation.appointment.pk %}"
+       style="margin-left:auto;background:rgba(0,181,163,0.15);border:1px solid rgba(0,181,163,0.3);border-radius:8px;padding:0.35rem 0.75rem;color:var(--teal);text-decoration:none;font-size:0.8rem">
+      <i class="fas fa-calendar"></i> RDV {{ conversation.appointment.date|date:"d/m" }}
+    </a>
+    {% endif %}
+  </div>
+
+  <!-- Messages window -->
+  <div id="chatWindow"
+       style="background:var(--gray-50);border-left:1px solid var(--gray-200);border-right:1px solid var(--gray-200);padding:1.5rem;min-height:400px;max-height:500px;overflow-y:auto;display:flex;flex-direction:column;gap:0.75rem">
+
+    {% for msg in all_messages %}
+    <div style="display:flex;flex-direction:column;align-items:{% if msg.sender == user %}flex-end{% else %}flex-start{% endif %}">
+      <div style="max-width:75%;background:{% if msg.sender == user %}linear-gradient(135deg,var(--teal),var(--teal-light)){% else %}white{% endif %};color:{% if msg.sender == user %}var(--navy){% else %}var(--gray-900){% endif %};border-radius:{% if msg.sender == user %}18px 18px 4px 18px{% else %}18px 18px 18px 4px{% endif %};padding:0.75rem 1rem;border:{% if msg.sender != user %}1px solid var(--gray-200){% else %}none{% endif %};font-size:0.9rem;line-height:1.6">
+        {{ msg.content }}
+      </div>
+      <div style="font-size:0.72rem;color:var(--gray-400);margin-top:3px;padding:0 4px">
+        {{ msg.created_at|date:"d/m/Y" }} à {{ msg.created_at|time:"H:i" }}
+        {% if msg.sender == user and msg.is_read %}
+          <i class="fas fa-check-double" style="color:var(--teal)"></i>
+        {% elif msg.sender == user %}
+          <i class="fas fa-check" style="color:var(--gray-300)"></i>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div style="text-align:center;color:var(--gray-400);padding:3rem 1rem">
+      <div style="font-size:2.5rem;margin-bottom:1rem">💬</div>
+      <p>Commencez la conversation !</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Input area -->
+  <div style="background:white;border:1px solid var(--gray-200);border-top:none;border-radius:0 0 var(--radius-lg) var(--radius-lg);padding:1rem 1.25rem">
+    <form method="post" id="messageForm" style="display:flex;gap:10px;align-items:flex-end">
+      {% csrf_token %}
+      <textarea name="content" id="messageInput"
+                style="flex:1;border:1.5px solid var(--gray-200);border-radius:14px;padding:0.75rem 1rem;font-family:'DM Sans',sans-serif;font-size:0.95rem;resize:none;outline:none;min-height:50px;max-height:120px;transition:border-color 0.2s"
+                placeholder="Écrivez votre message..."
+                rows="1"
+                onfocus="this.style.borderColor='var(--teal)'"
+                onblur="this.style.borderColor='var(--gray-200)'"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();document.getElementById('messageForm').submit()}"></textarea>
+      <button type="submit"
+              style="width:48px;height:48px;background:var(--teal);border:none;border-radius:14px;color:var(--navy);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0"
+              onmouseover="this.style.background='var(--teal-light)';this.style.transform='scale(1.05)'"
+              onmouseout="this.style.background='var(--teal)';this.style.transform=''">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </form>
+    <div style="font-size:0.75rem;color:var(--gray-400);margin-top:6px">
+      Entrée pour envoyer · Shift+Entrée pour nouvelle ligne
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Scroll to bottom
+const win = document.getElementById('chatWindow');
+if (win) win.scrollTop = win.scrollHeight;
+
+// Auto-resize textarea
+const ta = document.getElementById('messageInput');
+if (ta) {
+  ta.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+}
+</script>
+{% endblock %}

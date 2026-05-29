@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% block title %}Réserver un RDV{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-container">
+    <div class="breadcrumb">
+      <a href="/">Accueil</a><span class="breadcrumb-sep">/</span>
+      <a href="{% url 'doctors:list' %}">Médecins</a><span class="breadcrumb-sep">/</span>
+      <span>Réserver</span>
+    </div>
+    <h1 class="page-header-title">Réserver un rendez-vous</h1>
+    <p class="page-header-subtitle">avec {{ doctor }}</p>
+  </div>
+</div>
+
+<section class="section section-gray">
+  <div class="booking-layout section-container">
+
+    <!-- Left: Form -->
+    <div>
+      <div class="form-card" style="margin-bottom:1.5rem">
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem">
+          <i class="fas fa-calendar-plus" style="color:var(--teal)"></i> Choisir une date
+        </h3>
+        <div class="form-group">
+          <label class="form-label">Date souhaitée</label>
+          <input type="date" id="dateSelect" data-doctor-id="{{ doctor.pk }}"
+                 min="{% now 'Y-m-d' %}" class="form-input">
+        </div>
+        <div id="slotsContainer">
+          <p style="color:var(--gray-400);font-size:0.9rem;text-align:center;padding:1rem">
+            Sélectionnez une date pour voir les créneaux disponibles
+          </p>
+        </div>
+        <input type="hidden" id="slotInput" name="slot_id">
+        <div id="selectedSlot" style="color:var(--teal);font-size:0.875rem;font-weight:600;min-height:20px;margin-top:0.5rem"></div>
+      </div>
+
+      <div class="form-card">
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem">
+          <i class="fas fa-notes-medical" style="color:var(--teal)"></i> Motif de consultation
+        </h3>
+        <form method="post" id="bookingForm">
+          {% csrf_token %}
+          <input type="hidden" name="slot_id" id="slotInputFinal">
+          <div class="form-group">
+            <label class="form-label">Décrivez votre motif *</label>
+            <textarea name="reason" class="form-textarea" rows="4"
+              placeholder="Ex: Douleurs thoraciques depuis 3 jours, essoufflement..."
+              required id="reasonInput"></textarea>
+            <span style="color:var(--gray-400);font-size:0.8rem">Notre IA analysera votre motif pour évaluer l'urgence.</span>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center" onclick="finalizeBooking(event)">
+            <i class="fas fa-calendar-check"></i> Confirmer la réservation
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right: Doctor summary -->
+    <div>
+      <div style="background:var(--white);border-radius:var(--radius-xl);border:1px solid var(--gray-200);overflow:hidden;position:sticky;top:90px">
+        <div style="background:linear-gradient(135deg,var(--navy),var(--navy-light));padding:2rem;text-align:center">
+          {% if doctor.photo %}
+            <img src="{{ doctor.photo.url }}" style="width:80px;height:80px;border-radius:50%;border:3px solid rgba(0,181,163,0.5);object-fit:cover;margin:0 auto 1rem;display:block">
+          {% else %}
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-light));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--navy);margin:0 auto 1rem;border:3px solid rgba(0,181,163,0.5)">
+              {{ doctor.user.first_name|first|upper }}{{ doctor.user.last_name|first|upper }}
+            </div>
+          {% endif %}
+          <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:white">{{ doctor }}</div>
+          {% if doctor.specialty %}
+            <span style="background:rgba(0,181,163,0.2);color:var(--teal);border-radius:50px;padding:0.2rem 0.75rem;font-size:0.8rem;font-weight:600;display:inline-block;margin-top:0.5rem">
+              {{ doctor.specialty.icon }} {{ doctor.specialty.name }}
+            </span>
+          {% endif %}
+        </div>
+        <div style="padding:1.5rem">
+          <div style="display:flex;flex-direction:column;gap:0.75rem">
+            {% if doctor.years_experience %}
+            <div style="display:flex;align-items:center;gap:10px;color:var(--gray-600);font-size:0.9rem">
+              <i class="fas fa-briefcase" style="color:var(--teal);width:16px"></i>
+              {{ doctor.years_experience }} ans d'expérience
+            </div>
+            {% endif %}
+            {% if doctor.consultation_fee %}
+            <div style="display:flex;align-items:center;gap:10px;color:var(--gray-600);font-size:0.9rem">
+              <i class="fas fa-money-bill" style="color:var(--teal);width:16px"></i>
+              Consultation : {{ doctor.consultation_fee }} MAD
+            </div>
+            {% endif %}
+            {% if doctor.total_reviews > 0 %}
+            <div style="display:flex;align-items:center;gap:10px;color:var(--gray-600);font-size:0.9rem">
+              <i class="fas fa-star" style="color:var(--accent-orange);width:16px"></i>
+              {{ doctor.rating }}/5 ({{ doctor.total_reviews }} avis)
+            </div>
+            {% endif %}
+            {% if doctor.cabinet_address %}
+            <div style="display:flex;align-items:flex-start;gap:10px;color:var(--gray-600);font-size:0.9rem">
+              <i class="fas fa-location-dot" style="color:var(--teal);width:16px;margin-top:2px"></i>
+              {{ doctor.cabinet_address }}
+            </div>
+            {% endif %}
+          </div>
+
+          <div style="margin-top:1.5rem;padding:1rem;background:var(--teal-pale);border-radius:var(--radius);border:1px solid rgba(0,181,163,0.2)">
+            <div style="font-size:0.8rem;font-weight:700;color:var(--teal);margin-bottom:0.5rem">Récapitulatif</div>
+            <div style="font-size:0.85rem;color:var(--gray-600)">
+              <div id="recapDate">📅 Date : <span style="color:var(--gray-400)">Non sélectionnée</span></div>
+              <div id="recapSlot" style="margin-top:4px">⏰ Créneau : <span style="color:var(--gray-400)">Non sélectionné</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function finalizeBooking(e) {
+  const slotVal = document.getElementById('slotInput').value;
+  if (!slotVal) {
+    e.preventDefault();
+    alert('Veuillez sélectionner un créneau horaire.');
+    return;
+  }
+  document.getElementById('slotInputFinal').value = slotVal;
+}
+
+// Update recap when date changes
+document.getElementById('dateSelect')?.addEventListener('change', function() {
+  const d = new Date(this.value);
+  if (!isNaN(d)) {
+    document.getElementById('recapDate').innerHTML =
+      '📅 Date : <strong>' + d.toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long'}) + '</strong>';
+  }
+  document.getElementById('recapSlot').innerHTML = '⏰ Créneau : <span style="color:var(--gray-400)">Non sélectionné</span>';
+  document.getElementById('slotInput').value = '';
+});
+
+// Override slot selection to update recap
+const origSelectSlot = window.selectSlot;
+window.selectSlot = function(btn) {
+  origSelectSlot && origSelectSlot(btn);
+  document.getElementById('recapSlot').innerHTML =
+    '⏰ Créneau : <strong>' + btn.dataset.display + '</strong>';
+};
+</script>
+{% endblock %}

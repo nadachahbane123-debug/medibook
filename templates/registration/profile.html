@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}Mon Profil{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-container">
+    <h1 class="page-header-title">Mon Profil Médical</h1>
+    <p class="page-header-subtitle">Informations personnelles et médicales</p>
+  </div>
+</div>
+<section class="section section-gray">
+  <div style="max-width:800px;margin:0 auto;display:flex;flex-direction:column;gap:1.5rem">
+
+    <!-- Informations personnelles -->
+    <div class="form-card">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem;display:flex;align-items:center;gap:10px">
+        <span style="width:36px;height:36px;background:var(--teal-pale);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--teal)"><i class="fas fa-user"></i></span>
+        Informations personnelles
+      </h3>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-group">
+          <label class="form-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<span class="form-error">{{ field.errors|first }}</span>{% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Enregistrer</button>
+      </form>
+    </div>
+
+    <!-- Informations professionnelles (médecin uniquement) -->
+    {% if doctor %}
+    <div class="form-card">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem;display:flex;align-items:center;gap:10px">
+        <span style="width:36px;height:36px;background:#fff7ed;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--accent-orange)"><i class="fas fa-stethoscope"></i></span>
+        Informations professionnelles
+      </h3>
+      <form method="post" action="{% url 'doctors:save_profile' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="form-group">
+            <label class="form-label">Spécialité</label>
+            <select name="specialty" class="form-select">
+              {% for spec in specialties %}
+                <option value="{{ spec.pk }}" {% if doctor.specialty.pk == spec.pk %}selected{% endif %}>{{ spec.icon }} {{ spec.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">N° de licence</label>
+            <input type="text" name="license_number" value="{{ doctor.license_number }}" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Téléphone professionnel</label>
+            <input type="text" name="phone_professional" value="{{ doctor.phone_professional }}" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Années d'expérience</label>
+            <input type="number" name="years_experience" value="{{ doctor.years_experience }}" class="form-input" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tarif consultation (MAD)</label>
+            <input type="number" name="consultation_fee" value="{{ doctor.consultation_fee }}" class="form-input" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Photo professionnelle</label>
+            <input type="file" name="photo" class="form-input" accept="image/*">
+            {% if doctor.photo %}<div style="margin-top:4px;font-size:0.8rem;color:var(--teal)">✓ Photo actuelle présente</div>{% endif %}
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label class="form-label">Adresse du cabinet</label>
+            <input type="text" name="cabinet_address" value="{{ doctor.cabinet_address }}" class="form-input">
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label class="form-label">Biographie</label>
+            <textarea name="bio" class="form-textarea" rows="3" placeholder="Décrivez votre parcours et expertise...">{{ doctor.bio }}</textarea>
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label class="form-label">Statut du profil</label>
+            <div style="display:flex;align-items:center;gap:12px;padding:0.75rem 1rem;background:var(--gray-50);border-radius:var(--radius);border:1px solid var(--gray-200)">
+              <input type="checkbox" name="is_active" id="is_active"
+                     {% if doctor.is_active %}checked{% endif %}
+                     style="width:18px;height:18px;accent-color:var(--teal);cursor:pointer">
+              <label for="is_active" style="cursor:pointer;font-size:0.9rem;color:var(--gray-700)">
+                Profil actif — visible par les patients et disponible pour les réservations
+              </label>
+            </div>
+            {% if doctor.is_active %}
+              <div style="margin-top:6px;font-size:0.8rem;color:var(--success);display:flex;align-items:center;gap:6px">
+                <i class="fas fa-circle" style="font-size:0.5rem"></i> Votre profil est actuellement visible
+              </div>
+            {% else %}
+              <div style="margin-top:6px;font-size:0.8rem;color:var(--danger);display:flex;align-items:center;gap:6px">
+                <i class="fas fa-circle" style="font-size:0.5rem"></i> Votre profil est actuellement masqué
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Enregistrer le profil professionnel</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- Informations médicales (patient uniquement) -->
+    {% if patient %}
+    <div class="form-card">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem;display:flex;align-items:center;gap:10px">
+        <span style="width:36px;height:36px;background:#fef2f2;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--danger)"><i class="fas fa-heart-pulse"></i></span>
+        Informations médicales
+        <span style="font-size:0.75rem;background:var(--gray-100);color:var(--gray-500);border-radius:50px;padding:2px 8px;font-weight:400">Confidentiel</span>
+      </h3>
+      <form method="post" action="{% url 'patients:update_medical' %}">
+        {% csrf_token %}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div class="form-group">
+            <label class="form-label">Groupe sanguin</label>
+            <select name="blood_type" class="form-select">
+              <option value="">Non renseigné</option>
+              <option value="A+" {% if patient.blood_type == "A+" %}selected{% endif %}>A+</option>
+              <option value="A-" {% if patient.blood_type == "A-" %}selected{% endif %}>A-</option>
+              <option value="B+" {% if patient.blood_type == "B+" %}selected{% endif %}>B+</option>
+              <option value="B-" {% if patient.blood_type == "B-" %}selected{% endif %}>B-</option>
+              <option value="AB+" {% if patient.blood_type == "AB+" %}selected{% endif %}>AB+</option>
+              <option value="AB-" {% if patient.blood_type == "AB-" %}selected{% endif %}>AB-</option>
+              <option value="O+" {% if patient.blood_type == "O+" %}selected{% endif %}>O+</option>
+              <option value="O-" {% if patient.blood_type == "O-" %}selected{% endif %}>O-</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">N° Assurance maladie</label>
+            <input type="text" name="insurance_number" value="{{ patient.insurance_number }}" class="form-input">
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label class="form-label">Allergies connues</label>
+            <textarea name="allergies" class="form-textarea" rows="2" placeholder="Ex: Pénicilline, aspirine...">{{ patient.allergies }}</textarea>
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label class="form-label">Antécédents médicaux</label>
+            <textarea name="chronic_conditions" class="form-textarea" rows="2" placeholder="Ex: Diabète, hypertension...">{{ patient.chronic_conditions }}</textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact d'urgence</label>
+            <input type="text" name="emergency_contact" value="{{ patient.emergency_contact }}" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Téléphone d'urgence</label>
+            <input type="text" name="emergency_phone" value="{{ patient.emergency_phone }}" class="form-input">
+          </div>
+        </div>
+        <div style="background:var(--gray-50);border-radius:var(--radius);padding:0.75rem 1rem;margin-bottom:1rem;font-size:0.8rem;color:var(--gray-500);display:flex;gap:8px">
+          <i class="fas fa-shield-halved" style="color:var(--teal)"></i>
+          Ces informations sont confidentielles et partagées uniquement avec vos médecins.
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Enregistrer</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <!-- Sécurité -->
+    <div class="form-card">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1rem;display:flex;align-items:center;gap:10px">
+        <span style="width:36px;height:36px;background:#fffbeb;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--warning)"><i class="fas fa-lock"></i></span>
+        Sécurité
+      </h3>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+        <a href="{% url 'accounts:password_change' %}" class="btn btn-primary btn-sm">
+          <i class="fas fa-lock"></i> Changer mon mot de passe
+        </a>
+        <a href="{% url 'accounts:password-reset' %}" class="btn btn-outline btn-sm" style="color:var(--gray-700);border-color:var(--gray-300)">
+          <i class="fas fa-key"></i> Mot de passe oublié ?
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

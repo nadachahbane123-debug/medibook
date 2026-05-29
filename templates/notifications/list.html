@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-container">
+    <h1 class="page-header-title">Notifications</h1>
+  </div>
+</div>
+<section class="section section-gray">
+  <div style="max-width:700px;margin:0 auto">
+    <div class="table-card">
+      {% if notifications %}
+      {% for notif in notifications %}
+      <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--gray-100);display:flex;gap:12px;align-items:flex-start;{% if not notif.is_read %}background:#f0fdf4;{% endif %}">
+        <div style="width:10px;height:10px;border-radius:50%;background:{% if not notif.is_read %}var(--teal){% else %}var(--gray-200){% endif %};margin-top:5px;flex-shrink:0"></div>
+        <div style="flex:1">
+          <p style="color:var(--gray-700);font-size:0.9rem">{{ notif.message }}</p>
+          <span style="color:var(--gray-400);font-size:0.8rem">{{ notif.created_at|timesince }}</span>
+        </div>
+        <span style="font-size:0.75rem;color:var(--gray-400)">{{ notif.get_notification_type_display }}</span>
+      </div>
+      {% endfor %}
+      {% else %}
+      <div class="empty-state"><div class="empty-state-icon">🔔</div><div class="empty-state-title">Aucune notification</div></div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

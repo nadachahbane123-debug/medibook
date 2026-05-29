@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}Historique — {{ patient.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-container">
+    <div class="breadcrumb">
+      <a href="{% url 'dashboard:home' %}">Dashboard</a>
+      <span class="breadcrumb-sep">/</span>
+      <span>Historique patient</span>
+    </div>
+    <h1 class="page-header-title">
+      <i class="fas fa-notes-medical" style="color:var(--teal)"></i>
+      Dossier de {{ patient.user.get_full_name }}
+    </h1>
+    <p class="page-header-subtitle">Historique médical complet · {{ total }} consultation{{ total|pluralize }}</p>
+  </div>
+</div>
+
+<section class="section section-gray">
+  <div style="max-width:900px;margin:0 auto;display:grid;grid-template-columns:280px 1fr;gap:2rem">
+
+    <!-- Fiche patient -->
+    <div>
+      <div style="background:white;border-radius:var(--radius-xl);border:1px solid var(--gray-200);overflow:hidden;position:sticky;top:90px">
+        <div style="background:linear-gradient(135deg,var(--navy),var(--navy-light));padding:2rem;text-align:center">
+          <div style="width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-light));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--navy);margin:0 auto 1rem;border:3px solid rgba(0,181,163,0.5)">
+            {{ patient.user.first_name|first|upper }}{{ patient.user.last_name|first|upper }}
+          </div>
+          <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:white">{{ patient.user.get_full_name }}</div>
+          {% if patient.user.date_of_birth %}
+          <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-top:4px">Né(e) le {{ patient.user.date_of_birth|date:"d/m/Y" }}</div>
+          {% endif %}
+        </div>
+        <div style="padding:1.25rem">
+          <div style="display:flex;flex-direction:column;gap:0.6rem">
+            {% if patient.blood_type %}
+            <div style="display:flex;justify-content:space-between;font-size:0.875rem">
+              <span style="color:var(--gray-500)">Groupe sanguin</span>
+              <span style="font-weight:600;background:#fef2f2;color:var(--danger);border-radius:6px;padding:1px 8px">{{ patient.blood_type }}</span>
+            </div>
+            {% endif %}
+            {% if patient.allergies %}
+            <div style="font-size:0.875rem">
+              <div style="color:var(--gray-500);margin-bottom:2px">Allergies</div>
+              <div style="color:var(--danger);font-size:0.825rem;background:#fef2f2;border-radius:6px;padding:4px 8px">{{ patient.allergies }}</div>
+            </div>
+            {% endif %}
+            {% if patient.chronic_conditions %}
+            <div style="font-size:0.875rem">
+              <div style="color:var(--gray-500);margin-bottom:2px">Antécédents</div>
+              <div style="color:var(--gray-700);font-size:0.825rem;background:var(--gray-50);border-radius:6px;padding:4px 8px">{{ patient.chronic_conditions }}</div>
+            </div>
+            {% endif %}
+            {% if patient.insurance_number %}
+            <div style="display:flex;justify-content:space-between;font-size:0.875rem">
+              <span style="color:var(--gray-500)">Assurance</span>
+              <span style="font-weight:600;font-size:0.825rem">{{ patient.insurance_number }}</span>
+            </div>
+            {% endif %}
+          </div>
+          <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--gray-100);display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;text-align:center">
+            <div style="background:var(--gray-50);border-radius:8px;padding:0.6rem">
+              <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--navy)">{{ total }}</div>
+              <div style="font-size:0.7rem;color:var(--gray-400)">Total RDV</div>
+            </div>
+            <div style="background:var(--teal-pale);border-radius:8px;padding:0.6rem">
+              <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:var(--teal)">{{ completed }}</div>
+              <div style="font-size:0.7rem;color:var(--teal)">Terminés</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historique des consultations -->
+    <div style="display:flex;flex-direction:column;gap:1rem">
+      {% for rdv in all_appointments %}
+      <div style="background:white;border-radius:var(--radius-lg);border:1px solid {% if rdv.status == 'completed' %}rgba(0,181,163,0.3){% else %}var(--gray-200){% endif %};overflow:hidden">
+        <!-- En-tête RDV -->
+        <div style="padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--gray-100)">
+          <div style="display:flex;gap:12px;align-items:center">
+            <div style="background:var(--teal-pale);border-radius:8px;padding:0.4rem 0.75rem;text-align:center">
+              <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--teal)">{{ rdv.date|date:"d" }}</div>
+              <div style="font-size:0.65rem;color:var(--teal);text-transform:uppercase">{{ rdv.date|date:"M Y" }}</div>
+            </div>
+            <div>
+              <div style="font-weight:600;color:var(--navy);font-size:0.9rem">{{ rdv.doctor }}</div>
+              <div style="font-size:0.8rem;color:var(--gray-500)">{{ rdv.time|time:"H:i" }} · {% if rdv.specialty %}{{ rdv.specialty.icon }} {{ rdv.specialty.name }}{% endif %}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge badge-{{ rdv.status }}">{{ rdv.get_status_display }}</span>
+            <span class="badge badge-{{ rdv.urgency }}">{{ rdv.get_urgency_display }}</span>
+          </div>
+        </div>
+        <!-- Motif -->
+        <div style="padding:0.75rem 1.25rem;background:var(--gray-50);border-bottom:1px solid var(--gray-100)">
+          <span style="font-size:0.75rem;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.05em">Motif · </span>
+          <span style="font-size:0.875rem;color:var(--gray-700)">{{ rdv.reason }}</span>
+        </div>
+        <!-- Consultation si dispo -->
+        {% if rdv.consultation %}
+        <div style="padding:1rem 1.25rem">
+          {% if rdv.consultation.diagnosis %}
+          <div style="margin-bottom:0.5rem">
+            <span style="font-size:0.75rem;color:var(--info);font-weight:700;text-transform:uppercase">Diagnostic · </span>
+            <span style="font-size:0.875rem;color:var(--gray-700)">{{ rdv.consultation.diagnosis }}</span>
+          </div>
+          {% endif %}
+          {% if rdv.consultation.treatment %}
+          <div style="margin-bottom:0.5rem">
+            <span style="font-size:0.75rem;color:var(--success);font-weight:700;text-transform:uppercase">Traitement · </span>
+            <span style="font-size:0.875rem;color:var(--gray-700)">{{ rdv.consultation.treatment }}</span>
+          </div>
+          {% endif %}
+          {% if rdv.consultation.prescription %}
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <a href="{% url 'appointments:prescription_pdf' rdv.consultation.pk %}"
+               target="_blank"
+               style="display:inline-flex;align-items:center;gap:6px;background:var(--teal-pale);color:var(--teal);border:1px solid rgba(0,181,163,0.3);border-radius:8px;padding:0.3rem 0.75rem;font-size:0.8rem;font-weight:600;text-decoration:none;transition:all 0.2s"
+               onmouseover="this.style.background='var(--teal)';this.style.color='var(--navy)'"
+               onmouseout="this.style.background='var(--teal-pale)';this.style.color='var(--teal)'">
+              <i class="fas fa-file-prescription"></i> Ordonnance PDF
+            </a>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% empty %}
+      <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-title">Aucun historique</div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</section>
+{% endblock %}

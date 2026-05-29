@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Calendrier Médecin{% endblock %}
+{% block extra_css %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 68px)">
+  <div style="background:var(--navy);padding:2rem 1.25rem">
+    <a href="{% url 'dashboard:home' %}" class="sidebar-link"><i class="fas fa-gauge-high"></i> Tableau de bord</a>
+    <a href="{% url 'appointments:list' %}" class="sidebar-link"><i class="fas fa-calendar-check"></i> Rendez-vous</a>
+    <a href="{% url 'dashboard:calendar' %}" class="sidebar-link active"><i class="fas fa-calendar-week"></i> Calendrier</a>
+    <a href="{% url 'schedules:manage' %}" class="sidebar-link"><i class="fas fa-calendar"></i> Disponibilités</a>
+    <a href="{% url 'accounts:logout' %}" class="sidebar-link" style="color:rgba(239,68,68,0.7)"><i class="fas fa-right-from-bracket"></i> Déconnexion</a>
+  </div>
+
+  <div style="padding:2rem;background:var(--gray-50)">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">📅 Calendrier Hebdomadaire</h1>
+      <p class="dashboard-subtitle">Semaine du {{ week_start|date:"d F" }} au {{ week_end|date:"d F Y" }}</p>
+    </div>
+
+    <!-- Week navigation -->
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
+      <a href="?offset={{ offset|add:'-7' }}" class="btn btn-outline btn-sm" style="color:var(--navy);border-color:var(--gray-300)">
+        <i class="fas fa-chevron-left"></i> Semaine précédente
+      </a>
+      <a href="?" class="btn btn-sm" style="background:var(--teal-pale);color:var(--teal);border:1px solid rgba(0,181,163,0.3)">
+        Aujourd'hui
+      </a>
+      <a href="?offset={{ offset|add:'7' }}" class="btn btn-outline btn-sm" style="color:var(--navy);border-color:var(--gray-300)">
+        Semaine suivante <i class="fas fa-chevron-right"></i>
+      </a>
+    </div>
+
+    <!-- Calendar Grid -->
+    <div style="background:var(--white);border-radius:var(--radius-xl);border:1px solid var(--gray-200);overflow:hidden">
+
+      <!-- Day headers -->
+      <div style="display:grid;grid-template-columns:80px repeat(7,1fr);background:var(--navy)">
+        <div style="padding:1rem;border-right:1px solid rgba(255,255,255,0.08)"></div>
+        {% for day_info in week_days %}
+        <div style="padding:1rem;text-align:center;border-right:1px solid rgba(255,255,255,0.08){% if day_info.is_today %};background:rgba(0,181,163,0.15){% endif %}">
+          <div style="color:rgba(255,255,255,0.5);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.08em">{{ day_info.date|date:"D" }}</div>
+          <div style="color:{% if day_info.is_today %}var(--teal){% else %}white{% endif %};font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;margin-top:2px">{{ day_info.date|date:"j" }}</div>
+          {% if day_info.count > 0 %}
+          <div style="background:var(--teal);color:var(--navy);border-radius:50px;font-size:0.7rem;font-weight:700;padding:1px 8px;display:inline-block;margin-top:4px">{{ day_info.count }} RDV</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Time slots rows -->
+      {% for hour in hours %}
+      <div style="display:grid;grid-template-columns:80px repeat(7,1fr);border-bottom:1px solid var(--gray-100);min-height:60px">
+        <div style="padding:0.5rem 0.75rem;border-right:1px solid var(--gray-100);font-size:0.8rem;color:var(--gray-400);text-align:right;font-weight:600">{{ hour }}:00</div>
+        {% for day_info in week_days %}
+        <div style="border-right:1px solid var(--gray-100);padding:4px;{% if day_info.is_today %}background:rgba(0,181,163,0.02){% endif %}position:relative">
+          {% for apt in day_info.appointments %}
+            {% if apt.time.hour == hour %}
+            <a href="{% url 'appointments:detail' apt.pk %}"
+               style="display:block;background:{% if apt.status == 'confirmed' %}#ecfdf5{% elif apt.status == 'pending' %}#fffbeb{% elif apt.status == 'cancelled' %}#fef2f2{% else %}#eff6ff{% endif %};border-left:3px solid {% if apt.status == 'confirmed' %}var(--success){% elif apt.status == 'pending' %}var(--warning){% elif apt.status == 'cancelled' %}var(--danger){% else %}var(--info){% endif %};border-radius:0 6px 6px 0;padding:4px 6px;text-decoration:none;margin-bottom:2px;transition:transform 0.15s"
+               onmouseover="this.style.transform='scale(1.02)'"
+               onmouseout="this.style.transform='scale(1)'">
+              <div style="font-size:0.72rem;font-weight:700;color:var(--navy)">{{ apt.time|time:"H:i" }}</div>
+              <div style="font-size:0.7rem;color:var(--gray-600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ apt.patient.user.get_full_name|truncatechars:18 }}</div>
+              {% if apt.urgency == 'high' %}
+              <div style="font-size:0.65rem;color:var(--danger)">🚨 Urgent</div>
+              {% endif %}
+            </a>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+
+    </div>
+
+    <!-- Legend -->
+    <div style="display:flex;gap:1rem;margin-top:1rem;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--gray-600)">
+        <div style="width:12px;height:12px;background:var(--success);border-radius:3px"></div> Confirmé
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--gray-600)">
+        <div style="width:12px;height:12px;background:var(--warning);border-radius:3px"></div> En attente
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--gray-600)">
+        <div style="width:12px;height:12px;background:var(--danger);border-radius:3px"></div> Annulé
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--gray-600)">
+        <div style="width:12px;height:12px;background:var(--info);border-radius:3px"></div> Terminé
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block title %}Assistant IA{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-container">
+    <div class="breadcrumb">
+      <a href="/">Accueil</a>
+      <span class="breadcrumb-sep">/</span>
+      <span>Assistant IA</span>
+    </div>
+    <h1 class="page-header-title">🤖 Assistant IA d'Orientation Médicale</h1>
+    <p class="page-header-subtitle">Décrivez vos symptômes, notre IA vous oriente vers le bon spécialiste</p>
+  </div>
+</div>
+
+<section class="section section-gray">
+  <div class="ai-container">
+
+    <div style="background:var(--white);border-radius:var(--radius-xl);border:1px solid var(--gray-200);overflow:hidden;box-shadow:var(--shadow-md)">
+
+      <!-- Chat Header -->
+      <div style="background:linear-gradient(135deg,var(--navy),var(--navy-light));padding:1.5rem 2rem;display:flex;align-items:center;gap:16px">
+        <div style="width:48px;height:48px;background:rgba(0,181,163,0.2);border:2px solid rgba(0,181,163,0.4);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🤖</div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:white">MediBot</div>
+          <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;display:flex;align-items:center;gap:6px">
+            <span style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block"></span>
+            En ligne · Analyse basée sur IA (TF-IDF + Cosine Similarity)
+          </div>
+        </div>
+        <div style="margin-left:auto;background:rgba(0,181,163,0.12);border:1px solid rgba(0,181,163,0.25);border-radius:8px;padding:0.4rem 0.9rem;color:var(--teal);font-size:0.8rem;font-weight:600">
+          ⚕ Orientatif seulement
+        </div>
+      </div>
+
+      <!-- Chat Window -->
+      <div class="chat-window" id="chatWindow" style="border-radius:0">
+        <div class="chat-message chat-message-bot">
+          👋 Bonjour ! Je suis <strong>MediBot</strong>, votre assistant d'orientation médicale.<br><br>
+          Décrivez vos symptômes en français (ex: "j'ai des douleurs à la poitrine et des palpitations") et je vous suggérerai la spécialité médicale la plus adaptée.<br><br>
+          <em style="color:var(--gray-500);font-size:0.825rem">⚠️ Cet outil est indicatif uniquement. En cas d'urgence, appelez le 15 ou rendez-vous aux urgences.</em>
+        </div>
+      </div>
+
+      <!-- Chat Input -->
+      <div style="padding:1rem 1.5rem;border-top:1px solid var(--gray-100);background:var(--white)">
+        <div class="chat-input-area">
+          <textarea
+            id="chatInput"
+            class="chat-input"
+            rows="2"
+            placeholder="Décrivez vos symptômes ici... (ex: douleurs thoraciques, essoufflement, palpitations)"
+            style="height:56px;"
+          ></textarea>
+          <button id="chatSend" class="chat-send-btn" title="Envoyer">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:0.75rem;flex-wrap:wrap">
+          <span style="font-size:0.75rem;color:var(--gray-400);margin-right:4px">Exemples rapides :</span>
+          {% for ex in exemples %}
+          <button onclick="document.getElementById('chatInput').value='{{ ex }}'" style="background:var(--gray-100);border:none;border-radius:6px;padding:0.25rem 0.6rem;font-size:0.75rem;color:var(--gray-600);cursor:pointer;transition:background 0.2s" onmouseover="this.style.background='var(--teal-pale)'" onmouseout="this.style.background='var(--gray-100)'">
+            {{ ex }}
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Info cards -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2rem">
+      <div style="background:var(--white);border-radius:var(--radius);border:1px solid var(--gray-200);padding:1.25rem;text-align:center">
+        <div style="font-size:1.75rem;margin-bottom:0.5rem">🔬</div>
+        <div style="font-family:'Syne',sans-serif;font-size:0.875rem;font-weight:700;color:var(--navy);margin-bottom:0.25rem">Algorithme IA</div>
+        <div style="color:var(--gray-500);font-size:0.8rem">TF-IDF + Cosine Similarity via scikit-learn</div>
+      </div>
+      <div style="background:var(--white);border-radius:var(--radius);border:1px solid var(--gray-200);padding:1.25rem;text-align:center">
+        <div style="font-size:1.75rem;margin-bottom:0.5rem">🏥</div>
+        <div style="font-family:'Syne',sans-serif;font-size:0.875rem;font-weight:700;color:var(--navy);margin-bottom:0.25rem">12 Spécialités</div>
+        <div style="color:var(--gray-500);font-size:0.8rem">Base de connaissances médicales étendue</div>
+      </div>
+      <div style="background:var(--white);border-radius:var(--radius);border:1px solid var(--gray-200);padding:1.25rem;text-align:center">
+        <div style="font-size:1.75rem;margin-bottom:0.5rem">🛡️</div>
+        <div style="font-family:'Syne',sans-serif;font-size:0.875rem;font-weight:700;color:var(--navy);margin-bottom:0.25rem">Confidentiel</div>
+        <div style="color:var(--gray-500);font-size:0.8rem">Aucune donnée médicale stockée</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Inject CSRF token for fetch calls
+const csrfToken = '{{ csrf_token }}';
+</script>
+{% endblock %}

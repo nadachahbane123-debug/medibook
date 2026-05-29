@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Configuration Médecin{% endblock %}
+{% block content %}
+<div style="min-height:80vh;display:flex;align-items:center;justify-content:center;padding:2rem">
+  <div style="text-align:center;max-width:500px">
+    <div style="font-size:4rem;margin-bottom:1rem">👨‍⚕️</div>
+    <h1 style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:var(--navy);margin-bottom:1rem">Profil médecin non configuré</h1>
+    <p style="color:var(--gray-500);margin-bottom:2rem">Votre compte médecin doit être configuré par un administrateur. Veuillez contacter l'administration.</p>
+    <a href="/admin/" class="btn btn-primary">Administration</a>
+  </div>
+</div>
+{% endblock %}

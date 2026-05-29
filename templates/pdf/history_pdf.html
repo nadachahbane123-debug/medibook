@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Historique MediBook — {{ patient.user.get_full_name }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; color: #1e293b; background: #fff; padding: 0; }
+    .page { max-width: 800px; margin: 0 auto; padding: 40px; }
+    .header { background: linear-gradient(135deg, #0a1628, #132240); color: white; padding: 28px 40px; margin: -40px -40px 28px; display: flex; justify-content: space-between; align-items: center; }
+    .brand { font-size: 24px; font-weight: 800; }
+    .brand span { color: #00b5a3; }
+    .patient-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 24px; display: flex; gap: 20px; align-items: center; }
+    .patient-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #00b5a3, #00d4bf); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: #0a1628; flex-shrink: 0; }
+    .rdv-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    .rdv-table th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+    .rdv-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; font-size: 13px; vertical-align: middle; }
+    .rdv-table tr:hover td { background: #f8fafc; }
+    .badge { display: inline-flex; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge-confirmed { background: #ecfdf5; color: #065f46; }
+    .badge-pending { background: #fffbeb; color: #92400e; }
+    .badge-cancelled { background: #fef2f2; color: #991b1b; }
+    .badge-completed { background: #eff6ff; color: #1e40af; }
+    .badge-absent { background: #f3f4f6; color: #374151; }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    .summary-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center; }
+    .summary-num { font-size: 24px; font-weight: 800; color: #00b5a3; }
+    .summary-label { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .footer { border-top: 1px solid #e2e8f0; padding-top: 14px; display: flex; justify-content: space-between; }
+    .footer p { font-size: 11px; color: #94a3b8; }
+    .print-btn { position: fixed; top: 20px; right: 20px; background: #00b5a3; color: #0a1628; border: none; border-radius: 10px; padding: 10px 20px; font-weight: 700; font-size: 14px; cursor: pointer; }
+    @media print { .print-btn { display: none; } .header, .summary-card { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨️ Imprimer / PDF</button>
+<div class="page">
+  <div class="header">
+    <div class="brand">⚕ Medi<span>Book</span></div>
+    <div style="text-align:right">
+      <div style="font-size:15px;font-weight:700">Historique Médical</div>
+      <div style="font-size:12px;opacity:0.5;margin-top:4px">Généré le {{ generated_at|date:"d/m/Y à H:i" }}</div>
+    </div>
+  </div>
+
+  <div class="patient-card">
+    <div class="patient-avatar">{{ patient.user.first_name|first|upper }}{{ patient.user.last_name|first|upper }}</div>
+    <div>
+      <div style="font-size:18px;font-weight:800;color:#0a1628">{{ patient.user.get_full_name }}</div>
+      <div style="font-size:13px;color:#64748b;margin-top:4px">{{ patient.user.email }}</div>
+      {% if patient.user.date_of_birth %}<div style="font-size:13px;color:#64748b">Né(e) le {{ patient.user.date_of_birth|date:"d/m/Y" }}</div>{% endif %}
+      {% if patient.blood_type %}<div style="font-size:13px;color:#64748b">Groupe sanguin : <strong>{{ patient.blood_type }}</strong></div>{% endif %}
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card"><div class="summary-num">{{ appointments|length }}</div><div class="summary-label">Total RDV</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:#065f46">{{ appointments|length }}</div><div class="summary-label">Confirmés</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:#1e40af">{{ appointments|length }}</div><div class="summary-label">Terminés</div></div>
+    <div class="summary-card"><div class="summary-num" style="color:#991b1b">0</div><div class="summary-label">Annulés</div></div>
+  </div>
+
+  <table class="rdv-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Médecin</th>
+        <th>Spécialité</th>
+        <th>Motif</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rdv in appointments %}
+      <tr>
+        <td><strong>{{ rdv.date|date:"d/m/Y" }}</strong><br><span style="font-size:11px;color:#64748b">{{ rdv.time|time:"H:i" }}</span></td>
+        <td>{{ rdv.doctor }}</td>
+        <td>{% if rdv.specialty %}{{ rdv.specialty.icon }} {{ rdv.specialty.name }}{% else %}—{% endif %}</td>
+        <td style="max-width:200px;color:#64748b">{{ rdv.reason|truncatechars:60 }}</td>
+        <td><span class="badge badge-{{ rdv.status }}">{{ rdv.get_status_display }}</span></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px">Aucun rendez-vous</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <p>MediBook — Historique confidentiel de {{ patient.user.get_full_name }}</p>
+    <p>{{ generated_at|date:"d/m/Y" }}</p>
+  </div>
+</div>
+</body>
+</html>

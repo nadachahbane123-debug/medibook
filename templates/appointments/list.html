@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Mes Rendez-vous{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-container">
+    <h1 class="page-header-title">Mes Rendez-vous</h1>
+  </div>
+</div>
+<section class="section section-gray">
+  <div class="section-container">
+    <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap">
+      <a href="?status=" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline{% endif %}" style="{% if not status_filter %}{% else %}color:var(--navy);border-color:var(--gray-300){% endif %}">Tous</a>
+      <a href="?status=pending" class="btn btn-sm {% if status_filter == 'pending' %}btn-primary{% else %}btn-outline{% endif %}" style="{% if status_filter == 'pending' %}{% else %}color:var(--navy);border-color:var(--gray-300){% endif %}">En attente</a>
+      <a href="?status=confirmed" class="btn btn-sm {% if status_filter == 'confirmed' %}btn-primary{% else %}btn-outline{% endif %}" style="{% if status_filter == 'confirmed' %}{% else %}color:var(--navy);border-color:var(--gray-300){% endif %}">Confirmés</a>
+      <a href="?status=completed" class="btn btn-sm {% if status_filter == 'completed' %}btn-primary{% else %}btn-outline{% endif %}" style="{% if status_filter == 'completed' %}{% else %}color:var(--navy);border-color:var(--gray-300){% endif %}">Terminés</a>
+      <a href="?status=cancelled" class="btn btn-sm {% if status_filter == 'cancelled' %}btn-primary{% else %}btn-outline{% endif %}" style="{% if status_filter == 'cancelled' %}{% else %}color:var(--navy);border-color:var(--gray-300){% endif %}">Annulés</a>
+    </div>
+    <div class="table-card">
+      {% if appointments %}
+      <table>
+        <thead>
+          <tr>
+            <th>{% if user.is_patient %}Médecin{% else %}Patient{% endif %}</th>
+            <th>Date & Heure</th>
+            <th>Spécialité</th>
+            <th>Motif</th>
+            <th>Statut</th>
+            <th>Urgence</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rdv in appointments %}
+          <tr>
+            <td style="font-weight:600">{% if user.is_patient %}{{ rdv.doctor }}{% else %}{{ rdv.patient.user.get_full_name }}{% endif %}</td>
+            <td>{{ rdv.date|date:"d/m/Y" }} à {{ rdv.time|time:"H:i" }}</td>
+            <td>{% if rdv.specialty %}{{ rdv.specialty.icon }} {{ rdv.specialty.name }}{% else %}—{% endif %}</td>
+            <td style="max-width:160px">{{ rdv.reason|truncatechars:50 }}</td>
+            <td><span class="badge badge-{{ rdv.status }}">{{ rdv.get_status_display }}</span></td>
+            <td><span class="badge badge-{{ rdv.urgency }}">{{ rdv.get_urgency_display }}</span></td>
+            <td><a href="{% url 'appointments:detail' rdv.pk %}" style="color:var(--teal);text-decoration:none;font-weight:600">Voir →</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">📅</div>
+        <div class="empty-state-title">Aucun rendez-vous</div>
+        <a href="{% url 'doctors:list' %}" class="btn btn-primary mt-3">Prendre un rendez-vous</a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

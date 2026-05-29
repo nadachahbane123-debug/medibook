@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}Statistiques Avancées{% endblock %}
+{% block extra_css %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 68px)">
+  <div style="background:var(--navy);padding:2rem 1.25rem">
+    <a href="{% url 'dashboard:home' %}" class="sidebar-link"><i class="fas fa-gauge-high"></i> Vue globale</a>
+    <a href="{% url 'dashboard:advanced_stats' %}" class="sidebar-link active"><i class="fas fa-chart-line"></i> Stats avancées</a>
+    <a href="{% url 'dashboard:ai_stats' %}" class="sidebar-link"><i class="fas fa-robot"></i> Stats IA</a>
+    <a href="{% url 'dashboard:manage_doctors' %}" class="sidebar-link"><i class="fas fa-user-doctor"></i> Médecins</a>
+    <a href="/admin/" class="sidebar-link"><i class="fas fa-screwdriver-wrench"></i> Administration</a>
+    <a href="{% url 'accounts:logout' %}" class="sidebar-link" style="color:rgba(239,68,68,0.7)"><i class="fas fa-right-from-bracket"></i> Déconnexion</a>
+  </div>
+
+  <div style="padding:2rem;background:var(--gray-50)">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">📊 Statistiques Avancées</h1>
+      <p class="dashboard-subtitle">Analyse détaillée de l'activité de la plateforme</p>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="stats-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:2rem">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-teal"><i class="fas fa-calendar-check"></i></div>
+        <div><div class="stat-value">{{ stats.total }}</div><div class="stat-label">Total RDV</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-green"><i class="fas fa-circle-check"></i></div>
+        <div><div class="stat-value">{{ stats.completed }}</div><div class="stat-label">Terminés</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-red"><i class="fas fa-circle-xmark"></i></div>
+        <div><div class="stat-value">{{ stats.cancelled }}</div><div class="stat-label">Annulés</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-orange"><i class="fas fa-percent"></i></div>
+        <div><div class="stat-value">{{ stats.taux_annulation }}%</div><div class="stat-label">Taux annulation</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-blue"><i class="fas fa-chart-pie"></i></div>
+        <div><div class="stat-value">{{ stats.taux_completion }}%</div><div class="stat-label">Taux complétion</div></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+      <!-- Évolution mensuelle -->
+      <div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.5rem">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem;display:flex;justify-content:space-between;align-items:center">
+          Évolution mensuelle (12 mois)
+          <span style="font-size:0.8rem;font-weight:400;color:var(--gray-400)">Total vs Annulés</span>
+        </div>
+        <div style="height:280px"><canvas id="monthlyChart"></canvas></div>
+      </div>
+
+      <!-- Heures de pointe -->
+      <div style="background:white;border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.5rem">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem">
+          Heures de pointe
+        </div>
+        <div style="height:280px"><canvas id="hourlyChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Top médecins par note -->
+    {% if top_rated %}
+    <div class="table-card">
+      <div class="table-header"><span class="table-title">Top médecins par note patients</span></div>
+      <table>
+        <thead><tr><th>Médecin</th><th>Spécialité</th><th>Note</th><th>Avis</th><th>RDV total</th></tr></thead>
+        <tbody>
+          {% for doc in top_rated %}
+          <tr>
+            <td style="font-weight:600">{{ doc }}</td>
+            <td>{% if doc.specialty %}{{ doc.specialty.icon }} {{ doc.specialty.name }}{% endif %}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="color:var(--accent-orange)">★</span>
+                <strong>{{ doc.rating }}</strong>
+                <div style="flex:1;height:6px;background:var(--gray-100);border-radius:3px;overflow:hidden;min-width:60px">
+                  <div style="height:100%;background:var(--accent-orange);border-radius:3px;width:{{ doc.rating|floatformat:0 }}0%"></div>
+                </div>
+              </div>
+            </td>
+            <td>{{ doc.total_reviews }} avis</td>
+            <td>{{ doc.appointments.count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const monthly = {{ monthly_json|safe }};
+const hourly = {{ hourly_json|safe }};
+
+// Évolution mensuelle
+new Chart(document.getElementById('monthlyChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: monthly.map(m => m.month),
+    datasets: [
+      {
+        label: 'Total RDV',
+        data: monthly.map(m => m.total),
+        backgroundColor: 'rgba(0,181,163,0.2)',
+        borderColor: '#00b5a3',
+        borderWidth: 2,
+        borderRadius: 6,
+      },
+      {
+        label: 'Annulés',
+        data: monthly.map(m => m.cancelled),
+        backgroundColor: 'rgba(239,68,68,0.2)',
+        borderColor: '#ef4444',
+        borderWidth: 2,
+        borderRadius: 6,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', labels: { font: { family: 'DM Sans' }, boxWidth: 12 } } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Sans' } } },
+      x: { grid: { display: false }, ticks: { font: { family: 'DM Sans' }, maxRotation: 45 } }
+    }
+  }
+});
+
+// Heures de pointe
+new Chart(document.getElementById('hourlyChart').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels: hourly.map(h => h.hour),
+    datasets: [{
+      label: 'RDV',
+      data: hourly.map(h => h.count),
+      backgroundColor: hourly.map(h => h.count === Math.max(...hourly.map(x=>x.count)) ? '#00b5a3' : 'rgba(0,181,163,0.2)'),
+      borderColor: '#00b5a3',
+      borderWidth: 1.5,
+      borderRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+</script>
+{% endblock %}

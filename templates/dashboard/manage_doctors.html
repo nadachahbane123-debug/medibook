@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}Gestion Médecins{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 68px)">
+  <div style="background:var(--navy);padding:2rem 1.25rem">
+    <a href="{% url 'dashboard:home' %}" class="sidebar-link"><i class="fas fa-gauge-high"></i> Vue globale</a>
+    <a href="{% url 'dashboard:manage_users' %}" class="sidebar-link"><i class="fas fa-users"></i> Utilisateurs</a>
+    <a href="{% url 'dashboard:manage_doctors' %}" class="sidebar-link active"><i class="fas fa-user-doctor"></i> Médecins</a>
+    <a href="{% url 'dashboard:manage_specialties' %}" class="sidebar-link"><i class="fas fa-stethoscope"></i> Spécialités</a>
+    <a href="{% url 'dashboard:advanced_stats' %}" class="sidebar-link"><i class="fas fa-chart-line"></i> Stats avancées</a>
+    <a href="{% url 'dashboard:ai_stats' %}" class="sidebar-link"><i class="fas fa-robot"></i> Stats IA</a>
+    <a href="{% url 'accounts:logout' %}" class="sidebar-link" style="color:rgba(239,68,68,0.7)"><i class="fas fa-right-from-bracket"></i> Déconnexion</a>
+  </div>
+  <div style="padding:2rem;background:var(--gray-50)">
+    <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <h1 class="dashboard-title">Gestion des médecins</h1>
+        <p class="dashboard-subtitle">{{ doctors|length }} médecin{{ doctors|length|pluralize }} enregistré{{ doctors|length|pluralize }}</p>
+      </div>
+      <button onclick="document.getElementById('addDoctorModal').style.display='flex'"
+              class="btn btn-primary"><i class="fas fa-plus"></i> Ajouter un médecin</button>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr><th>Médecin</th><th>Spécialité</th><th>Expérience</th><th>Tarif</th><th>Note</th><th>Statut</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for doc in doctors %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                {% if doc.photo %}
+                  <img src="{{ doc.photo.url }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0">
+                {% else %}
+                  <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-light));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;color:var(--navy);flex-shrink:0">
+                    {{ doc.user.first_name|first|upper }}{{ doc.user.last_name|first|upper }}
+                  </div>
+                {% endif %}
+                <div>
+                  <div style="font-weight:600;color:var(--navy)">{{ doc }}</div>
+                  <div style="font-size:0.8rem;color:var(--gray-500)">{{ doc.user.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td>{% if doc.specialty %}{{ doc.specialty.icon }} {{ doc.specialty.name }}{% else %}—{% endif %}</td>
+            <td>{{ doc.years_experience|default:"—" }} ans</td>
+            <td>{% if doc.consultation_fee %}{{ doc.consultation_fee }} MAD{% else %}—{% endif %}</td>
+            <td>{% if doc.rating > 0 %}<span style="color:var(--accent-orange)">★</span> {{ doc.rating }}{% else %}—{% endif %}</td>
+            <td>
+              {% if doc.is_active %}
+                <span class="badge badge-confirmed">Actif</span>
+              {% else %}
+                <span class="badge badge-cancelled">Inactif</span>
+              {% endif %}
+            </td>
+            <td style="display:flex;gap:6px">
+              <!-- Modifier -->
+              <button onclick="editDoctor({{ doc.pk }}, '{{ doc.user.first_name|escapejs }}', '{{ doc.user.last_name|escapejs }}', '{{ doc.user.email|escapejs }}', '{{ doc.specialty.pk|default:'' }}', '{{ doc.years_experience|default:0 }}', '{{ doc.consultation_fee|default:0 }}', '{{ doc.cabinet_address|default:''|escapejs }}', '{{ doc.license_number|default:''|escapejs }}')"
+                      class="btn btn-sm" style="background:var(--teal-pale);color:var(--teal);border:1px solid rgba(0,181,163,0.3)">
+                <i class="fas fa-edit"></i>
+              </button>
+              <!-- Activer/Désactiver -->
+              <form method="post" style="display:inline">
+                {% csrf_token %}
+                <input type="hidden" name="doctor_id" value="{{ doc.pk }}">
+                {% if doc.is_active %}
+                  <button type="submit" name="action" value="deactivate" class="btn btn-sm" style="background:#fef2f2;color:var(--danger);border:1px solid #fecaca">
+                    <i class="fas fa-ban"></i>
+                  </button>
+                {% else %}
+                  <button type="submit" name="action" value="activate" class="btn btn-sm" style="background:#ecfdf5;color:var(--success);border:1px solid #a7f3d0">
+                    <i class="fas fa-check"></i>
+                  </button>
+                {% endif %}
+              </form>
+              <!-- Supprimer -->
+              <form method="post" action="{% url 'dashboard:delete_doctor' doc.pk %}" style="display:inline"
+                    onsubmit="return confirm('Supprimer {{ doc }} ? Cette action est irréversible.')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm" style="background:#fef2f2;color:var(--danger);border:1px solid #fecaca">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ajouter/Modifier médecin -->
+<div id="addDoctorModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--white);border-radius:var(--radius-xl);padding:2rem;width:100%;max-width:600px;margin:1rem;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy)" id="doctorModalTitle">Ajouter un médecin</h3>
+      <button onclick="closeDoctorModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--gray-400)">×</button>
+    </div>
+    <form method="post" action="{% url 'dashboard:save_doctor' %}" id="doctorForm">
+      {% csrf_token %}
+      <input type="hidden" name="doctor_id" id="doctorId" value="">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group">
+          <label class="form-label">Prénom *</label>
+          <input type="text" name="first_name" id="docFirstName" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom *</label>
+          <input type="text" name="last_name" id="docLastName" class="form-input" required>
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Email *</label>
+          <input type="email" name="email" id="docEmail" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Spécialité</label>
+          <select name="specialty" id="docSpecialty" class="form-select">
+            <option value="">— Choisir —</option>
+            {% for spec in specialties %}
+              <option value="{{ spec.pk }}">{{ spec.icon }} {{ spec.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">N° Licence</label>
+          <input type="text" name="license_number" id="docLicense" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Années d'expérience</label>
+          <input type="number" name="years_experience" id="docExperience" class="form-input" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tarif (MAD)</label>
+          <input type="number" name="consultation_fee" id="docFee" class="form-input" min="0">
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Adresse cabinet</label>
+          <input type="text" name="cabinet_address" id="docAddress" class="form-input">
+        </div>
+        <div class="form-group" style="grid-column:span 2" id="passwordGroupDoc">
+          <label class="form-label">Mot de passe *</label>
+          <input type="password" name="password" id="docPassword" class="form-input">
+        </div>
+      </div>
+      <div style="display:flex;gap:1rem;margin-top:1rem">
+        <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center">
+          <i class="fas fa-save"></i> Enregistrer
+        </button>
+        <button type="button" onclick="closeDoctorModal()" class="btn btn-outline" style="flex:1;justify-content:center;color:var(--gray-700);border-color:var(--gray-300)">
+          Annuler
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function editDoctor(id, firstName, lastName, email, specialtyId, experience, fee, address, license) {
+  document.getElementById('doctorModalTitle').textContent = 'Modifier le médecin';
+  document.getElementById('doctorId').value = id;
+  document.getElementById('docFirstName').value = firstName;
+  document.getElementById('docLastName').value = lastName;
+  document.getElementById('docEmail').value = email;
+  document.getElementById('docSpecialty').value = specialtyId;
+  document.getElementById('docExperience').value = experience;
+  document.getElementById('docFee').value = fee;
+  document.getElementById('docAddress').value = address;
+  document.getElementById('docLicense').value = license;
+  document.getElementById('docPassword').placeholder = 'Laisser vide pour ne pas changer';
+  document.getElementById('docPassword').required = false;
+  document.getElementById('addDoctorModal').style.display = 'flex';
+}
+
+function closeDoctorModal() {
+  document.getElementById('addDoctorModal').style.display = 'none';
+  document.getElementById('doctorModalTitle').textContent = 'Ajouter un médecin';
+  document.getElementById('doctorId').value = '';
+  document.getElementById('docFirstName').value = '';
+  document.getElementById('docLastName').value = '';
+  document.getElementById('docEmail').value = '';
+  document.getElementById('docSpecialty').value = '';
+  document.getElementById('docExperience').value = '';
+  document.getElementById('docFee').value = '';
+  document.getElementById('docAddress').value = '';
+  document.getElementById('docLicense').value = '';
+  document.getElementById('docPassword').value = '';
+  document.getElementById('docPassword').required = true;
+}
+</script>
+{% endblock %}

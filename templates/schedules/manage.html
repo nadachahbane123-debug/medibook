@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}Mes Disponibilités{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-container">
+    <h1 class="page-header-title">Gérer mes disponibilités</h1>
+  </div>
+</div>
+<section class="section section-gray">
+  <div class="section-container" style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;max-width:1000px">
+    <div>
+      <!-- Disponibilités -->
+      <div class="form-card" style="margin-bottom:1.5rem">
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.25rem">Ajouter une disponibilité</h3>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_availability">
+          {% for field in avail_form %}
+          <div class="form-group">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">Ajouter</button>
+        </form>
+      </div>
+
+      <!-- Indisponibilité -->
+      <div class="form-card" style="margin-bottom:1.5rem">
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.25rem">Période d'indisponibilité</h3>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_unavailability">
+          {% for field in unav_form %}
+          <div class="form-group">
+            <label class="form-label">{{ field.label }}</label>
+            {{ field }}
+          </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-danger" style="width:100%;justify-content:center">Bloquer cette période</button>
+        </form>
+      </div>
+
+      <!-- Jours de congé -->
+      <div class="form-card">
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.25rem">
+          <i class="fas fa-umbrella-beach" style="color:var(--teal)"></i> Jours de congé
+        </h3>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="add_leave">
+          <div class="form-group">
+            <label class="form-label">Date de congé</label>
+            <input type="date" name="leave_date" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Motif (optionnel)</label>
+            <input type="text" name="leave_reason" class="form-input" placeholder="Ex: Congé annuel, formation...">
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+            <i class="fas fa-plus"></i> Ajouter ce jour de congé
+          </button>
+        </form>
+
+        {% if leave_days %}
+        <div style="margin-top:1.5rem;border-top:1px solid var(--gray-100);padding-top:1rem">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;margin-bottom:0.75rem">Congés planifiés</div>
+          {% for leave in leave_days %}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--gray-100)">
+            <div>
+              <span style="font-weight:600;color:var(--navy)">{{ leave.date|date:"l d F Y" }}</span>
+              {% if leave.reason %}<span style="color:var(--gray-500);font-size:0.85rem"> — {{ leave.reason }}</span>{% endif %}
+            </div>
+            <form method="post" style="display:inline">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="delete_leave">
+              <input type="hidden" name="leave_id" value="{{ leave.pk }}">
+              <button type="submit" style="background:none;border:none;color:var(--danger);cursor:pointer">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <div>
+      <!-- Liste des disponibilités -->
+      <div class="table-card" style="margin-bottom:1.5rem">
+        <div class="table-header"><span class="table-title">Mes disponibilités</span></div>
+        {% if availabilities %}
+        {% for a in availabilities %}
+        <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:600;color:var(--navy)">{{ a.get_day_of_week_display }}</div>
+            <div style="font-size:0.85rem;color:var(--gray-500)">{{ a.start_time|time:"H:i" }} — {{ a.end_time|time:"H:i" }} · {{ a.slot_duration }} min/créneau</div>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_availability">
+            <input type="hidden" name="avail_id" value="{{ a.pk }}">
+            <button type="submit" style="background:none;border:none;color:var(--danger);cursor:pointer"><i class="fas fa-trash"></i></button>
+          </form>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state" style="padding:2rem">
+          <div class="empty-state-icon">📅</div>
+          <div class="empty-state-title">Aucune disponibilité</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Liste des indisponibilités -->
+      <div class="table-card">
+        <div class="table-header"><span class="table-title">Périodes bloquées</span></div>
+        {% if unavailabilities %}
+        {% for u in unavailabilities %}
+        <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--gray-100);display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-weight:600;color:var(--navy)">{{ u.start_date|date:"d/m/Y" }} → {{ u.end_date|date:"d/m/Y" }}</div>
+            {% if u.reason %}<div style="font-size:0.85rem;color:var(--gray-500)">{{ u.reason }}</div>{% endif %}
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_unavailability">
+            <input type="hidden" name="unav_id" value="{{ u.pk }}">
+            <button type="submit" style="background:none;border:none;color:var(--danger);cursor:pointer"><i class="fas fa-trash"></i></button>
+          </form>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state" style="padding:2rem">
+          <div class="empty-state-icon">🚫</div>
+          <div class="empty-state-title">Aucune période bloquée</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

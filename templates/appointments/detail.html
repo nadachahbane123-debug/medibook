@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block title %}Rendez-vous #{{ appointment.pk }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-container">
+    <div class="breadcrumb">
+      <a href="{% url 'appointments:list' %}">Rendez-vous</a><span class="breadcrumb-sep">/</span><span>Détail</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h1 class="page-header-title">Rendez-vous #{{ appointment.pk }}</h1>
+        <p class="page-header-subtitle">{{ appointment.date|date:"l d F Y" }} à {{ appointment.time|time:"H:i" }}</p>
+      </div>
+      <a href="{% url 'appointments:export_pdf' appointment.pk %}" class="btn btn-primary btn-sm" target="_blank"
+         style="background:rgba(0,181,163,0.15);color:var(--teal);border:1px solid rgba(0,181,163,0.3)">
+        <i class="fas fa-file-pdf"></i> Télécharger PDF
+      </a>
+    </div>
+  </div>
+</div>
+<section class="section section-gray">
+  <div style="max-width:800px;margin:0 auto;display:flex;flex-direction:column;gap:1.5rem">
+    <div class="form-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem">
+        <div>
+          <h2 style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:var(--navy)">
+            {{ appointment.doctor }} &nbsp;&times;&nbsp; {{ appointment.patient.user.get_full_name }}
+          </h2>
+          <div style="color:var(--gray-500);font-size:0.9rem;margin-top:4px">
+            📅 {{ appointment.date|date:"l d F Y" }} à {{ appointment.time|time:"H:i" }}
+            {% if appointment.end_time %} — {{ appointment.end_time|time:"H:i" }}{% endif %}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          <span class="badge badge-{{ appointment.status }}">{{ appointment.get_status_display }}</span>
+          <span class="badge badge-{{ appointment.urgency }}">Urgence : {{ appointment.get_urgency_display }}</span>
+        </div>
+      </div>
+      <div style="background:var(--gray-50);border-radius:var(--radius);padding:1rem;margin-bottom:1rem">
+        <div style="font-size:0.8rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;margin-bottom:0.5rem">Motif de consultation</div>
+        <p style="color:var(--gray-700)">{{ appointment.reason }}</p>
+      </div>
+      {% if appointment.cancellation_reason %}
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);padding:1rem;margin-bottom:1rem">
+        <div style="font-size:0.8rem;font-weight:700;color:var(--danger);margin-bottom:0.5rem">Raison d'annulation</div>
+        <p style="color:#991b1b">{{ appointment.cancellation_reason }}</p>
+      </div>
+      {% endif %}
+      <div style="display:flex;gap:1rem;flex-wrap:wrap">
+        {% if appointment.can_cancel and appointment.status in "pending,confirmed" %}
+          <a href="{% url 'appointments:reschedule' appointment.pk %}" class="btn btn-outline btn-sm" style="color:var(--teal);border-color:rgba(0,181,163,0.4)">
+            <i class="fas fa-calendar-pen"></i> Modifier
+          </a>
+          <a href="{% url 'appointments:cancel' appointment.pk %}" class="btn btn-danger btn-sm">
+            <i class="fas fa-times"></i> Annuler
+          </a>
+        {% endif %}
+        {% if user.is_doctor and appointment.doctor.user == user %}
+          <a href="{% url 'appointments:patient_history' appointment.patient.pk %}"
+             style="display:inline-flex;align-items:center;gap:6px;background:#eff6ff;color:var(--info);border:1px solid #bfdbfe;border-radius:8px;padding:0.4rem 1rem;font-size:0.85rem;font-weight:600;text-decoration:none;transition:all 0.2s">
+            <i class="fas fa-notes-medical"></i> Dossier patient complet
+          </a>
+          {% if appointment.status == 'pending' %}
+            <form method="post" style="display:inline">
+              {% csrf_token %}
+              <input type="hidden" name="update_status" value="1">
+              <input type="hidden" name="new_status" value="confirmed">
+              <button type="submit" class="btn btn-primary btn-sm">
+                <i class="fas fa-check"></i> Confirmer
+              </button>
+            </form>
+          {% endif %}
+          {% if appointment.status == 'confirmed' %}
+            <form method="post" style="display:inline">
+              {% csrf_token %}
+              <input type="hidden" name="update_status" value="1">
+              <input type="hidden" name="new_status" value="completed">
+              <button type="submit" class="btn btn-sm" style="background:var(--success);color:white">
+                <i class="fas fa-check-double"></i> Terminé
+              </button>
+            </form>
+            <form method="post" style="display:inline">
+              {% csrf_token %}
+              <input type="hidden" name="update_status" value="1">
+              <input type="hidden" name="new_status" value="absent">
+              <button type="submit" class="btn btn-danger btn-sm">
+                Absent
+              </button>
+            </form>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    {% if consultation_form %}
+    <div class="form-card">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.25rem">🩺 Compte-rendu de consultation</h3>
+      <form method="post">
+        {% csrf_token %}
+        {% for field in consultation_form %}
+        <div class="form-group"><label class="form-label">{{ field.label }}</label>{{ field }}</div>
+        {% endfor %}
+        <button type="submit" name="submit_consultation" value="1" class="btn btn-primary">Enregistrer</button>
+      </form>
+    </div>
+    {% endif %}
+    {% if appointment.consultation %}
+    <div class="form-card" style="background:#eff6ff;border-color:#bfdbfe">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+        <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--info)">🩺 Compte-rendu médical</h3>
+        {% if appointment.consultation.prescription %}
+        <a href="{% url 'appointments:prescription_pdf' appointment.consultation.pk %}" target="_blank"
+           class="btn btn-primary btn-sm">
+          <i class="fas fa-file-prescription"></i> Ordonnance PDF
+        </a>
+        {% endif %}
+      </div>
+      {% if appointment.consultation.diagnosis %}<p style="margin-bottom:0.75rem"><strong>Diagnostic :</strong> {{ appointment.consultation.diagnosis }}</p>{% endif %}
+      {% if appointment.consultation.treatment %}<p style="margin-bottom:0.75rem"><strong>Traitement :</strong> {{ appointment.consultation.treatment }}</p>{% endif %}
+      {% if appointment.consultation.prescription %}<p style="margin-bottom:0.75rem"><strong>Ordonnance :</strong> {{ appointment.consultation.prescription }}</p>{% endif %}
+      {% if appointment.consultation.follow_up_date %}<p><strong>Suivi :</strong> {{ appointment.consultation.follow_up_date|date:"d/m/Y" }}</p>{% endif %}
+    </div>
+    {% endif %}
+    {% if review_form %}
+    <div class="form-card">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.25rem">⭐ Donner un avis</h3>
+      <form method="post">
+        {% csrf_token %}
+        {% for field in review_form %}
+        <div class="form-group"><label class="form-label">{{ field.label }}</label>{{ field }}</div>
+        {% endfor %}
+        <button type="submit" name="submit_review" value="1" class="btn btn-primary">Publier mon avis</button>
+      </form>
+    </div>
+    {% endif %}
+    {% if appointment.review %}
+    <div class="form-card" style="background:#fffbeb;border-color:#fde68a">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1rem">⭐ Avis du patient</h3>
+      <div style="color:var(--accent-orange);font-size:1.5rem">{% for i in "12345" %}{% if forloop.counter <= appointment.review.rating %}★{% else %}☆{% endif %}{% endfor %}</div>
+      {% if appointment.review.comment %}<p style="margin-top:0.5rem;color:var(--gray-700)">{{ appointment.review.comment }}</p>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

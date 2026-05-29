@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}Médecins{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-container">
+    <div class="breadcrumb"><a href="/">Accueil</a><span class="breadcrumb-sep">/</span><span>Médecins</span></div>
+    <h1 class="page-header-title">Nos Médecins</h1>
+    <p class="page-header-subtitle">{{ total_count }} médecin{{ total_count|pluralize }} disponible{{ total_count|pluralize }}</p>
+  </div>
+</div>
+<section class="section section-gray">
+  <div class="section-container">
+    <div class="filter-bar">
+      <form method="get" style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;width:100%">
+        <div class="filter-group"><label>🔍 Recherche</label><input type="text" name="search" value="{{ search }}" placeholder="Nom, spécialité..." class="form-input"></div>
+        <div class="filter-group"><label>🏥 Spécialité</label>
+          <select name="specialty" class="form-select">
+            <option value="">Toutes</option>
+            {% for s in specialties %}<option value="{{ s.pk }}" {% if selected_specialty == s.pk|stringformat:"i" %}selected{% endif %}>{{ s.icon }} {{ s.name }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="filter-group" style="min-width:130px"><label>⭐ Note min.</label>
+          <select name="min_rating" class="form-select">
+            <option value="">Toutes</option>
+            <option value="3" {% if min_rating == "3" %}selected{% endif %}>3+ ⭐</option>
+            <option value="4" {% if min_rating == "4" %}selected{% endif %}>4+ ⭐</option>
+            <option value="4.5" {% if min_rating == "4.5" %}selected{% endif %}>4.5+ ⭐</option>
+          </select>
+        </div>
+        <div class="filter-group" style="min-width:140px"><label>💰 Tarif max (MAD)</label><input type="number" name="max_fee" value="{{ max_fee }}" placeholder="Ex: 500" class="form-input" min="0"></div>
+        <div class="filter-group" style="min-width:130px"><label>📅 Expérience min.</label>
+          <select name="min_exp" class="form-select">
+            <option value="">Tous</option>
+            <option value="3" {% if min_exp == "3" %}selected{% endif %}>3+ ans</option>
+            <option value="5" {% if min_exp == "5" %}selected{% endif %}>5+ ans</option>
+            <option value="10" {% if min_exp == "10" %}selected{% endif %}>10+ ans</option>
+          </select>
+        </div>
+        <div class="filter-group" style="min-width:130px"><label>↕ Trier par</label>
+          <select name="sort" class="form-select">
+            <option value="name" {% if sort == "name" %}selected{% endif %}>Nom</option>
+            <option value="rating" {% if sort == "rating" %}selected{% endif %}>Meilleures notes</option>
+            <option value="experience" {% if sort == "experience" %}selected{% endif %}>Expérience</option>
+            <option value="fee" {% if sort == "fee" %}selected{% endif %}>Tarif</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:flex-end">
+          <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrer</button>
+          {% if search or selected_specialty or min_rating or max_fee or min_exp %}
+            <a href="{% url 'doctors:list' %}" class="btn btn-outline" style="color:var(--gray-700);border-color:var(--gray-300)"><i class="fas fa-times"></i></a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+    {% if doctors %}
+    <div class="doctor-grid">
+      {% for doctor in doctors %}
+      <div class="doctor-card">
+        <div class="doctor-card-header">
+          {% if doctor.photo %}<img src="{{ doctor.photo.url }}" alt="{{ doctor }}" class="doctor-avatar">
+          {% else %}<div class="doctor-avatar-placeholder">{{ doctor.user.first_name|first|upper }}{{ doctor.user.last_name|first|upper }}</div>{% endif %}
+          <div class="doctor-name">Dr. {{ doctor.user.get_full_name }}</div>
+          {% if doctor.specialty %}<span class="doctor-specialty-tag">{{ doctor.specialty.icon }} {{ doctor.specialty.name }}</span>{% endif %}
+        </div>
+        <div class="doctor-card-body">
+          <div class="doctor-meta">
+            {% if doctor.years_experience %}<div class="doctor-meta-item"><i class="fas fa-briefcase-medical"></i> {{ doctor.years_experience }} ans d'expérience</div>{% endif %}
+            {% if doctor.cabinet_address %}<div class="doctor-meta-item"><i class="fas fa-location-dot"></i> {{ doctor.cabinet_address|truncatechars:40 }}</div>{% endif %}
+            {% if doctor.consultation_fee %}<div class="doctor-meta-item"><i class="fas fa-money-bill"></i> {{ doctor.consultation_fee }} MAD</div>{% endif %}
+          </div>
+          {% if doctor.total_reviews > 0 %}
+          <div class="doctor-rating">
+            <div class="stars">{% for i in "12345" %}{% if forloop.counter <= doctor.rating %}★{% else %}☆{% endif %}{% endfor %}</div>
+            <span class="rating-num">{{ doctor.rating }}</span>
+            <span style="color:var(--gray-300);font-size:0.8rem">({{ doctor.total_reviews }} avis)</span>
+          </div>
+          {% endif %}
+        </div>
+        <div class="doctor-footer">
+          <a href="{% url 'doctors:detail' doctor.pk %}" class="btn btn-outline btn-sm" style="color:var(--navy);border-color:var(--gray-300)">Voir le profil</a>
+          {% if user.is_authenticated and user.is_patient %}<a href="{% url 'appointments:book' doctor.pk %}" class="btn btn-primary btn-sm"><i class="fas fa-calendar-plus"></i> Réserver</a>
+          {% elif not user.is_authenticated %}<a href="{% url 'accounts:login' %}" class="btn btn-primary btn-sm"><i class="fas fa-calendar-plus"></i> Réserver</a>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:3rem">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}&search={{ search }}&specialty={{ selected_specialty }}&sort={{ sort }}&min_rating={{ min_rating }}&max_fee={{ max_fee }}&min_exp={{ min_exp }}" style="width:40px;height:40px;border:1.5px solid var(--gray-200);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--navy);text-decoration:none"><i class="fas fa-chevron-left"></i></a>
+      {% endif %}
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <span style="width:40px;height:40px;background:var(--teal);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--navy);font-weight:700;font-size:0.9rem">{{ num }}</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <a href="?page={{ num }}&search={{ search }}&specialty={{ selected_specialty }}&sort={{ sort }}&min_rating={{ min_rating }}&max_fee={{ max_fee }}&min_exp={{ min_exp }}" style="width:40px;height:40px;border:1.5px solid var(--gray-200);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--gray-600);text-decoration:none;font-size:0.9rem">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&search={{ search }}&specialty={{ selected_specialty }}&sort={{ sort }}&min_rating={{ min_rating }}&max_fee={{ max_fee }}&min_exp={{ min_exp }}" style="width:40px;height:40px;border:1.5px solid var(--gray-200);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--navy);text-decoration:none"><i class="fas fa-chevron-right"></i></a>
+      {% endif %}
+    </div>
+    <p style="text-align:center;color:var(--gray-400);font-size:0.8rem;margin-top:0.75rem">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} · {{ total_count }} résultats</p>
+    {% endif %}
+    {% else %}
+    <div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-title">Aucun médecin trouvé</div><a href="{% url 'doctors:list' %}" class="btn btn-primary mt-3">Voir tous les médecins</a></div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

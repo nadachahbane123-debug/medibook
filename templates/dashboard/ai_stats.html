@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Statistiques IA{% endblock %}
+{% block extra_css %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 68px)">
+  <div style="background:var(--navy);padding:2rem 1.25rem">
+    <a href="{% url 'dashboard:home' %}" class="sidebar-link"><i class="fas fa-gauge-high"></i> Vue globale</a>
+    <a href="{% url 'dashboard:ai_stats' %}" class="sidebar-link active"><i class="fas fa-robot"></i> Stats IA</a>
+    <a href="/admin/" class="sidebar-link"><i class="fas fa-screwdriver-wrench"></i> Administration</a>
+    <a href="{% url 'accounts:logout' %}" class="sidebar-link" style="color:rgba(239,68,68,0.7)"><i class="fas fa-right-from-bracket"></i> Déconnexion</a>
+  </div>
+
+  <div style="padding:2rem;background:var(--gray-50)">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">🤖 Statistiques IA MediBot</h1>
+      <p class="dashboard-subtitle">Analyse des {{ total_analyzed }} dernières consultations</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+
+      <!-- Specialties chart -->
+      <div style="background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.5rem">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem">
+          Spécialités les plus suggérées par l'IA
+        </div>
+        <div style="height:300px">
+          <canvas id="specialtiesChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Urgency chart -->
+      <div style="background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.5rem">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem">
+          Distribution des niveaux d'urgence
+        </div>
+        <div style="height:300px">
+          <canvas id="urgencyChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Top specialties table -->
+    <div class="table-card" style="margin-top:1.5rem">
+      <div class="table-header">
+        <span class="table-title">Top spécialités recommandées par l'IA</span>
+        <span style="color:var(--gray-500);font-size:0.8rem">Basé sur {{ total_analyzed }} analyses</span>
+      </div>
+      <table>
+        <thead><tr><th>Rang</th><th>Spécialité</th><th>Recommandations</th><th>Part</th></tr></thead>
+        <tbody>
+          {% for specialty, count in top_specialties %}
+          <tr>
+            <td style="font-weight:700;color:var(--teal)">#{{ forloop.counter }}</td>
+            <td style="font-weight:600">{{ specialty }}</td>
+            <td>{{ count }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="flex:1;height:8px;background:var(--gray-100);border-radius:4px;overflow:hidden">
+                  <div style="height:100%;background:var(--teal);border-radius:4px;width:{{ count|floatformat:0 }}%"></div>
+                </div>
+                <span style="font-size:0.8rem;color:var(--gray-500);min-width:35px">{{ count }}</span>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const specialtiesCtx = document.getElementById('specialtiesChart').getContext('2d');
+new Chart(specialtiesCtx, {
+  type: 'bar',
+  data: {
+    labels: [{% for s, c in top_specialties %}'{{ s }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+      label: 'Suggestions',
+      data: [{% for s, c in top_specialties %}{{ c }}{% if not forloop.last %},{% endif %}{% endfor %}],
+      backgroundColor: 'rgba(0,181,163,0.2)',
+      borderColor: '#00b5a3',
+      borderWidth: 2,
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } },
+      x: { grid: { display: false }, ticks: { maxRotation: 45 } }
+    }
+  }
+});
+
+const urgencyCtx = document.getElementById('urgencyChart').getContext('2d');
+new Chart(urgencyCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Faible', 'Modérée', 'Élevée'],
+    datasets: [{
+      data: [
+        {{ urgency_distribution.low|default:0 }},
+        {{ urgency_distribution.medium|default:0 }},
+        {{ urgency_distribution.high|default:0 }}
+      ],
+      backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { padding: 16 } } },
+    cutout: '60%'
+  }
+});
+</script>
+{% endblock %}

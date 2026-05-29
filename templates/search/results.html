@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Recherche : {{ query }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-container">
+    <h1 class="page-header-title">
+      <i class="fas fa-search" style="color:var(--teal)"></i>
+      Résultats pour "{{ query }}"
+    </h1>
+    <p class="page-header-subtitle">{{ total }} résultat{{ total|pluralize }} trouvé{{ total|pluralize }}</p>
+  </div>
+</div>
+
+<section class="section section-gray">
+  <div class="section-container" style="max-width:900px">
+
+    <!-- Search bar -->
+    <form method="get" action="{% url 'search' %}" style="margin-bottom:2rem">
+      <div style="display:flex;gap:10px;background:white;border:1.5px solid var(--gray-200);border-radius:var(--radius-lg);padding:0.6rem 1rem;box-shadow:var(--shadow)">
+        <i class="fas fa-search" style="color:var(--gray-400);margin-top:2px"></i>
+        <input type="text" name="q" value="{{ query }}" placeholder="Rechercher médecin, spécialité, symptôme..."
+               style="flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:0.95rem;color:var(--gray-900)">
+        <button type="submit" class="btn btn-primary btn-sm">Chercher</button>
+      </div>
+    </form>
+
+    {% if not query %}
+    <div class="empty-state">
+      <div class="empty-state-icon">🔍</div>
+      <div class="empty-state-title">Entrez votre recherche</div>
+      <div class="empty-state-subtitle">Médecins, spécialités, symptômes, rendez-vous...</div>
+    </div>
+
+    {% elif total == 0 %}
+    <div class="empty-state">
+      <div class="empty-state-icon">😕</div>
+      <div class="empty-state-title">Aucun résultat pour "{{ query }}"</div>
+      <div class="empty-state-subtitle">Essayez avec d'autres mots-clés ou consultez notre assistant IA.</div>
+      <a href="{% url 'ai_orientation:suggest' %}" class="btn btn-primary mt-3">
+        <i class="fas fa-robot"></i> Essayer l'Assistant IA
+      </a>
+    </div>
+
+    {% else %}
+
+    <!-- Médecins -->
+    {% if doctors %}
+    <div style="margin-bottom:2rem">
+      <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;color:var(--navy);margin-bottom:1rem;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-user-doctor" style="color:var(--teal)"></i> Médecins ({{ doctors|length }})
+      </h2>
+      <div style="display:flex;flex-direction:column;gap:0.75rem">
+        {% for doc in doctors %}
+        <a href="{% url 'doctors:detail' doc.pk %}"
+           style="background:white;border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;text-decoration:none;transition:all 0.2s"
+           onmouseover="this.style.borderColor='var(--teal)';this.style.transform='translateX(4px)'"
+           onmouseout="this.style.borderColor='var(--gray-200)';this.style.transform=''">
+          <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--navy-light));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;color:var(--teal);flex-shrink:0">
+            {{ doc.user.first_name|first|upper }}{{ doc.user.last_name|first|upper }}
+          </div>
+          <div style="flex:1">
+            <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy)">{{ doc }}</div>
+            <div style="font-size:0.85rem;color:var(--teal)">{% if doc.specialty %}{{ doc.specialty.icon }} {{ doc.specialty.name }}{% endif %}</div>
+            <div style="font-size:0.8rem;color:var(--gray-500)">{{ doc.cabinet_address|truncatechars:60 }}</div>
+          </div>
+          {% if doc.rating > 0 %}
+          <div style="color:var(--accent-orange);font-size:0.875rem">★ {{ doc.rating }}</div>
+          {% endif %}
+          <i class="fas fa-arrow-right" style="color:var(--gray-300)"></i>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Spécialités -->
+    {% if specialties %}
+    <div style="margin-bottom:2rem">
+      <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;color:var(--navy);margin-bottom:1rem;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-stethoscope" style="color:var(--teal)"></i> Spécialités ({{ specialties|length }})
+      </h2>
+      <div style="display:flex;flex-wrap:wrap;gap:0.75rem">
+        {% for spec in specialties %}
+        <a href="{% url 'doctors:list' %}?specialty={{ spec.pk }}"
+           style="background:white;border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:0.75rem 1.25rem;display:flex;align-items:center;gap:10px;text-decoration:none;transition:all 0.2s"
+           onmouseover="this.style.background='var(--teal-pale)';this.style.borderColor='var(--teal)'"
+           onmouseout="this.style.background='white';this.style.borderColor='var(--gray-200)'">
+          <span style="font-size:1.5rem">{{ spec.icon }}</span>
+          <span style="font-weight:600;color:var(--navy)">{{ spec.name }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Rendez-vous -->
+    {% if appointments %}
+    <div style="margin-bottom:2rem">
+      <h2 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;color:var(--navy);margin-bottom:1rem;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-calendar-check" style="color:var(--teal)"></i> Rendez-vous ({{ appointments|length }})
+      </h2>
+      <div style="display:flex;flex-direction:column;gap:0.75rem">
+        {% for rdv in appointments %}
+        <a href="{% url 'appointments:detail' rdv.pk %}"
+           style="background:white;border:1px solid var(--gray-200);border-radius:var(--radius-lg);padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem;text-decoration:none;transition:all 0.2s"
+           onmouseover="this.style.borderColor='var(--teal)';this.style.transform='translateX(4px)'"
+           onmouseout="this.style.borderColor='var(--gray-200)';this.style.transform=''">
+          <div style="background:var(--teal-pale);border-radius:10px;padding:0.5rem 0.75rem;text-align:center;min-width:56px;flex-shrink:0">
+            <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--teal)">{{ rdv.date|date:"d" }}</div>
+            <div style="font-size:0.7rem;color:var(--teal);text-transform:uppercase">{{ rdv.date|date:"M" }}</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-weight:600;color:var(--navy);font-size:0.9rem">{{ rdv.reason|truncatechars:60 }}</div>
+            <div style="font-size:0.8rem;color:var(--gray-500)">
+              {{ rdv.doctor }} · {{ rdv.time|time:"H:i" }}
+            </div>
+          </div>
+          <span class="badge badge-{{ rdv.status }}">{{ rdv.get_status_display }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

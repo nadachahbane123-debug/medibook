@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Annuler le rendez-vous{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="page-header-container">
+    <h1 class="page-header-title">Annuler le rendez-vous</h1>
+  </div>
+</div>
+<section class="section section-gray">
+  <div style="max-width:500px;margin:0 auto">
+    <div class="form-card">
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius);padding:1rem;margin-bottom:1.5rem">
+        <p style="color:#991b1b;font-weight:600">⚠️ Vous allez annuler votre rendez-vous du {{ appointment.date|date:"d/m/Y" }} à {{ appointment.time|time:"H:i" }} avec {{ appointment.doctor }}.</p>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label">Raison de l'annulation *</label>
+          <textarea name="reason" class="form-textarea" required placeholder="Expliquez pourquoi vous annulez..."></textarea>
+        </div>
+        <div style="display:flex;gap:1rem">
+          <button type="submit" class="btn btn-danger">Confirmer l'annulation</button>
+          <a href="{% url 'appointments:detail' appointment.pk %}" class="btn btn-outline" style="color:var(--navy);border-color:var(--gray-300)">Retour</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

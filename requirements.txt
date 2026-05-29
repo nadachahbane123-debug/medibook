@@ -1,0 +1,10 @@
+Django>=5.2,<6.0
+mysqlclient
+gunicorn
+whitenoise
+Pillow
+scikit-learn
+numpy
+python-dotenv
+# WeasyPrint pour export PDF (optionnel, fallback HTML si absent)
+# weasyprint

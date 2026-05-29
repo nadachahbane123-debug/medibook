@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+{% block title %}Gestion Utilisateurs{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 68px)">
+  <div style="background:var(--navy);padding:2rem 1.25rem">
+    <a href="{% url 'dashboard:home' %}" class="sidebar-link"><i class="fas fa-gauge-high"></i> Vue globale</a>
+    <a href="{% url 'dashboard:manage_users' %}" class="sidebar-link active"><i class="fas fa-users"></i> Utilisateurs</a>
+    <a href="{% url 'dashboard:manage_doctors' %}" class="sidebar-link"><i class="fas fa-user-doctor"></i> Médecins</a>
+    <a href="{% url 'dashboard:manage_specialties' %}" class="sidebar-link"><i class="fas fa-stethoscope"></i> Spécialités</a>
+    <a href="{% url 'dashboard:advanced_stats' %}" class="sidebar-link"><i class="fas fa-chart-line"></i> Stats avancées</a>
+    <a href="{% url 'accounts:logout' %}" class="sidebar-link" style="color:rgba(239,68,68,0.7)"><i class="fas fa-right-from-bracket"></i> Déconnexion</a>
+  </div>
+  <div style="padding:2rem;background:var(--gray-50)">
+    <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <h1 class="dashboard-title">Gestion des utilisateurs</h1>
+        <p class="dashboard-subtitle">{{ total }} utilisateur{{ total|pluralize }} au total</p>
+      </div>
+      <button onclick="document.getElementById('addUserModal').style.display='flex'"
+              class="btn btn-primary"><i class="fas fa-plus"></i> Ajouter un utilisateur</button>
+    </div>
+
+    <!-- Filtres -->
+    <form method="get" style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap">
+      <input type="text" name="search" value="{{ search }}" placeholder="Nom, email, username..." class="form-input" style="flex:1;min-width:200px">
+      <select name="role" class="form-select" style="min-width:150px">
+        <option value="">Tous les rôles</option>
+        <option value="patient" {% if role_filter == 'patient' %}selected{% endif %}>Patients</option>
+        <option value="doctor" {% if role_filter == 'doctor' %}selected{% endif %}>Médecins</option>
+        <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admins</option>
+      </select>
+      <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrer</button>
+      {% if search or role_filter %}
+        <a href="{% url 'dashboard:manage_users' %}" class="btn btn-outline" style="color:var(--gray-700);border-color:var(--gray-300)"><i class="fas fa-times"></i></a>
+      {% endif %}
+    </form>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr><th>Utilisateur</th><th>Email</th><th>Rôle</th><th>Inscrit le</th><th>Statut</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          {% for u in page_obj %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-light));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;color:var(--navy);flex-shrink:0">
+                  {{ u.first_name|first|upper }}{{ u.last_name|first|upper }}
+                </div>
+                <div>
+                  <div style="font-weight:600;color:var(--navy)">{{ u.get_full_name|default:u.username }}</div>
+                  <div style="font-size:0.8rem;color:var(--gray-500)">@{{ u.username }}</div>
+                </div>
+              </div>
+            </td>
+            <td style="color:var(--gray-600)">{{ u.email|default:"—" }}</td>
+            <td>
+              {% if u.role == 'admin' %}
+                <span class="badge" style="background:#fef2f2;color:var(--danger)">Admin</span>
+              {% elif u.role == 'doctor' %}
+                <span class="badge" style="background:#fff7ed;color:var(--accent-orange)">Médecin</span>
+              {% else %}
+                <span class="badge badge-confirmed">Patient</span>
+              {% endif %}
+            </td>
+            <td style="color:var(--gray-500);font-size:0.85rem">{{ u.date_joined|date:"d/m/Y" }}</td>
+            <td>
+              {% if u.is_active %}
+                <span class="badge badge-confirmed">Actif</span>
+              {% else %}
+                <span class="badge badge-cancelled">Inactif</span>
+              {% endif %}
+            </td>
+            <td style="display:flex;gap:6px;flex-wrap:wrap">
+              {% if u != request.user %}
+              <!-- Modifier -->
+              <button onclick="editUser({{ u.pk }}, '{{ u.first_name|escapejs }}', '{{ u.last_name|escapejs }}', '{{ u.email|escapejs }}', '{{ u.username|escapejs }}', '{{ u.role }}')"
+                      class="btn btn-sm" style="background:var(--teal-pale);color:var(--teal);border:1px solid rgba(0,181,163,0.3)">
+                <i class="fas fa-edit"></i>
+              </button>
+              <!-- Activer/Désactiver -->
+              <form method="post" action="{% url 'dashboard:toggle_user' u.pk %}" style="display:inline">
+                {% csrf_token %}
+                {% if u.is_active %}
+                  <button type="submit" class="btn btn-sm" style="background:#fef2f2;color:var(--danger);border:1px solid #fecaca">
+                    <i class="fas fa-ban"></i>
+                  </button>
+                {% else %}
+                  <button type="submit" class="btn btn-sm" style="background:#ecfdf5;color:var(--success);border:1px solid #a7f3d0">
+                    <i class="fas fa-check"></i>
+                  </button>
+                {% endif %}
+              </form>
+              <!-- Supprimer -->
+              <form method="post" action="{% url 'dashboard:delete_user' u.pk %}" style="display:inline"
+                    onsubmit="return confirm('Supprimer {{ u.get_full_name }} ? Cette action est irréversible.')">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm" style="background:#fef2f2;color:var(--danger);border:1px solid #fecaca">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:2rem">Aucun utilisateur trouvé</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      {% if page_obj.has_other_pages %}
+      <div style="display:flex;justify-content:center;gap:8px;padding:1rem">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}&search={{ search }}&role={{ role_filter }}" class="btn btn-outline btn-sm" style="color:var(--navy);border-color:var(--gray-300)"><i class="fas fa-chevron-left"></i></a>
+        {% endif %}
+        <span style="padding:0.4rem 1rem;font-size:0.875rem;color:var(--gray-500)">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}&search={{ search }}&role={{ role_filter }}" class="btn btn-outline btn-sm" style="color:var(--navy);border-color:var(--gray-300)"><i class="fas fa-chevron-right"></i></a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ajouter utilisateur -->
+<div id="addUserModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--white);border-radius:var(--radius-xl);padding:2rem;width:100%;max-width:500px;margin:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy)" id="modalTitle">Ajouter un utilisateur</h3>
+      <button onclick="closeModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--gray-400)">×</button>
+    </div>
+    <form method="post" action="{% url 'dashboard:save_user' %}" id="userForm">
+      {% csrf_token %}
+      <input type="hidden" name="user_id" id="modalUserId" value="">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group">
+          <label class="form-label">Prénom *</label>
+          <input type="text" name="first_name" id="modalFirstName" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nom *</label>
+          <input type="text" name="last_name" id="modalLastName" class="form-input" required>
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label class="form-label">Email *</label>
+          <input type="email" name="email" id="modalEmail" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Username *</label>
+          <input type="text" name="username" id="modalUsername" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rôle *</label>
+          <select name="role" id="modalRole" class="form-select">
+            <option value="patient">Patient</option>
+            <option value="doctor">Médecin</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:span 2" id="passwordGroup">
+          <label class="form-label">Mot de passe *</label>
+          <input type="password" name="password" id="modalPassword" class="form-input" placeholder="Laisser vide pour ne pas changer">
+        </div>
+      </div>
+      <div style="display:flex;gap:1rem;margin-top:1rem">
+        <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center">
+          <i class="fas fa-save"></i> Enregistrer
+        </button>
+        <button type="button" onclick="closeModal()" class="btn btn-outline" style="flex:1;justify-content:center;color:var(--gray-700);border-color:var(--gray-300)">
+          Annuler
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function editUser(id, firstName, lastName, email, username, role) {
+  document.getElementById('modalTitle').textContent = 'Modifier l\'utilisateur';
+  document.getElementById('modalUserId').value = id;
+  document.getElementById('modalFirstName').value = firstName;
+  document.getElementById('modalLastName').value = lastName;
+  document.getElementById('modalEmail').value = email;
+  document.getElementById('modalUsername').value = username;
+  document.getElementById('modalRole').value = role;
+  document.getElementById('modalPassword').placeholder = 'Laisser vide pour ne pas changer';
+  document.getElementById('modalPassword').required = false;
+  document.getElementById('addUserModal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('addUserModal').style.display = 'none';
+  document.getElementById('modalTitle').textContent = 'Ajouter un utilisateur';
+  document.getElementById('modalUserId').value = '';
+  document.getElementById('modalFirstName').value = '';
+  document.getElementById('modalLastName').value = '';
+  document.getElementById('modalEmail').value = '';
+  document.getElementById('modalUsername').value = '';
+  document.getElementById('modalRole').value = 'patient';
+  document.getElementById('modalPassword').value = '';
+  document.getElementById('modalPassword').required = true;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% block title %}Tableau de bord Patient{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 68px)">
+
+  <!-- Sidebar -->
+  <div style="background:var(--navy);padding:2rem 1.25rem">
+    <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;padding:0 0.75rem;margin-bottom:0.5rem">Menu</div>
+    <a href="{% url 'dashboard:home' %}" class="sidebar-link active"><i class="fas fa-gauge-high"></i> Tableau de bord</a>
+    <a href="{% url 'doctors:list' %}" class="sidebar-link"><i class="fas fa-user-doctor"></i> Trouver un médecin</a>
+    <a href="{% url 'appointments:list' %}" class="sidebar-link"><i class="fas fa-calendar-check"></i> Mes rendez-vous</a>
+    <a href="{% url 'messaging:inbox' %}" class="sidebar-link"><i class="fas fa-envelope"></i> Messagerie</a>
+    <a href="{% url 'ai_orientation:suggest' %}" class="sidebar-link"><i class="fas fa-robot"></i> Assistant IA</a>
+    <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;padding:0 0.75rem;margin:1.5rem 0 0.5rem">Compte</div>
+    <a href="{% url 'accounts:profile' %}" class="sidebar-link"><i class="fas fa-user"></i> Mon profil</a>
+    <a href="{% url 'notifications:list' %}" class="sidebar-link"><i class="fas fa-bell"></i> Notifications</a>
+    <a href="{% url 'accounts:logout' %}" class="sidebar-link" style="margin-top:auto;color:rgba(239,68,68,0.7)"><i class="fas fa-right-from-bracket"></i> Déconnexion</a>
+  </div>
+
+  <!-- Main -->
+  <div style="padding:2rem;background:var(--gray-50)">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">Bonjour, {{ user.first_name|default:user.username }} 👋</h1>
+      <p class="dashboard-subtitle">Voici un résumé de votre activité médicale ·
+        <a href="{% url 'appointments:export_history_pdf' %}" target="_blank" style="color:var(--teal);font-weight:600;text-decoration:none">
+          <i class="fas fa-file-pdf"></i> Exporter mon historique PDF
+        </a>
+      </p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" style="margin-bottom:1.5rem">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-teal"><i class="fas fa-calendar-check"></i></div>
+        <div><div class="stat-value">{{ stats.total }}</div><div class="stat-label">Total RDV</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-blue"><i class="fas fa-clock"></i></div>
+        <div><div class="stat-value">{{ stats.upcoming }}</div><div class="stat-label">À venir</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-green"><i class="fas fa-circle-check"></i></div>
+        <div><div class="stat-value">{{ stats.completed }}</div><div class="stat-label">Terminés</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-red"><i class="fas fa-circle-xmark"></i></div>
+        <div><div class="stat-value">{{ stats.cancelled }}</div><div class="stat-label">Annulés</div></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:1.5rem">
+
+      <div style="display:flex;flex-direction:column;gap:1.5rem">
+
+        <!-- Prochains rendez-vous -->
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">📅 Prochains rendez-vous</span>
+            <a href="{% url 'appointments:list' %}" style="color:var(--teal);font-size:0.85rem;text-decoration:none">Voir tout <i class="fas fa-arrow-right"></i></a>
+          </div>
+          {% if upcoming_appointments %}
+          <table>
+            <thead>
+              <tr><th>Médecin</th><th>Date & Heure</th><th>Spécialité</th><th>Statut</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for rdv in upcoming_appointments %}
+              <tr>
+                <td>
+                  <div style="font-weight:600;color:var(--navy)">{{ rdv.doctor }}</div>
+                  <div style="font-size:0.8rem;color:var(--gray-500)">{{ rdv.doctor.cabinet_address|truncatechars:30 }}</div>
+                </td>
+                <td>
+                  <div style="font-weight:600">{{ rdv.date|date:"d/m/Y" }}</div>
+                  <div style="font-size:0.8rem;color:var(--gray-500)">{{ rdv.time|time:"H:i" }}</div>
+                </td>
+                <td>{% if rdv.specialty %}{{ rdv.specialty.icon }} {{ rdv.specialty.name }}{% endif %}</td>
+                <td><span class="badge badge-{{ rdv.status }}">{{ rdv.get_status_display }}</span></td>
+                <td><a href="{% url 'appointments:detail' rdv.pk %}" style="color:var(--teal);font-size:0.85rem;text-decoration:none">Voir →</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="empty-state" style="padding:2rem">
+            <div class="empty-state-icon">📅</div>
+            <div class="empty-state-title">Aucun rendez-vous à venir</div>
+            <a href="{% url 'doctors:list' %}" class="btn btn-primary btn-sm mt-3">Trouver un médecin</a>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Rendez-vous passés -->
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">🕐 Rendez-vous passés</span>
+            <a href="{% url 'appointments:list' %}?status=completed" style="color:var(--teal);font-size:0.85rem;text-decoration:none">Voir tout <i class="fas fa-arrow-right"></i></a>
+          </div>
+          {% if past_appointments %}
+          <table>
+            <thead>
+              <tr><th>Médecin</th><th>Date</th><th>Spécialité</th><th>Statut</th><th></th></tr>
+            </thead>
+            <tbody>
+              {% for rdv in past_appointments %}
+              <tr>
+                <td style="font-weight:600;color:var(--navy)">{{ rdv.doctor }}</td>
+                <td>{{ rdv.date|date:"d/m/Y" }}</td>
+                <td>{% if rdv.specialty %}{{ rdv.specialty.icon }} {{ rdv.specialty.name }}{% endif %}</td>
+                <td><span class="badge badge-{{ rdv.status }}">{{ rdv.get_status_display }}</span></td>
+                <td><a href="{% url 'appointments:detail' rdv.pk %}" style="color:var(--teal);font-size:0.85rem;text-decoration:none">Voir →</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <div class="empty-state" style="padding:1.5rem">
+            <div class="empty-state-icon">🕐</div>
+            <div class="empty-state-title">Aucun rendez-vous passé</div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Rendez-vous annulés -->
+        {% if cancelled_appointments %}
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">❌ Rendez-vous annulés</span>
+            <a href="{% url 'appointments:list' %}?status=cancelled" style="color:var(--gray-400);font-size:0.85rem;text-decoration:none">Voir tout →</a>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Médecin</th><th>Date</th><th>Raison</th></tr>
+            </thead>
+            <tbody>
+              {% for rdv in cancelled_appointments %}
+              <tr>
+                <td style="font-weight:600;color:var(--navy)">{{ rdv.doctor }}</td>
+                <td>{{ rdv.date|date:"d/m/Y" }}</td>
+                <td style="color:var(--gray-500);font-size:0.85rem">{{ rdv.cancellation_reason|default:"—"|truncatechars:40 }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+
+      </div>
+
+      <!-- Right column -->
+      <div style="display:flex;flex-direction:column;gap:1.5rem">
+
+        <!-- Profil patient -->
+        <div style="background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.5rem">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center">
+            Mon profil
+            <a href="{% url 'accounts:profile' %}" style="font-size:0.8rem;color:var(--teal);text-decoration:none;font-weight:400">Modifier →</a>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:1rem">
+            <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--teal-light));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--navy);flex-shrink:0">
+              {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+            </div>
+            <div>
+              <div style="font-weight:700;color:var(--navy)">{{ user.get_full_name }}</div>
+              <div style="font-size:0.8rem;color:var(--gray-500)">{{ user.email }}</div>
+            </div>
+          </div>
+          {% if patient %}
+          <div style="display:flex;flex-direction:column;gap:0.5rem;font-size:0.875rem">
+            {% if patient.blood_type %}
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:var(--gray-500)">Groupe sanguin</span>
+              <span style="font-weight:600;background:#fef2f2;color:var(--danger);border-radius:6px;padding:1px 8px">{{ patient.blood_type }}</span>
+            </div>
+            {% endif %}
+            {% if patient.allergies %}
+            <div>
+              <span style="color:var(--gray-500)">Allergies</span>
+              <div style="font-size:0.8rem;color:var(--danger);margin-top:2px">{{ patient.allergies|truncatechars:50 }}</div>
+            </div>
+            {% endif %}
+            {% if patient.insurance_number %}
+            <div style="display:flex;justify-content:space-between">
+              <span style="color:var(--gray-500)">Assurance</span>
+              <span style="font-weight:600;font-size:0.8rem">{{ patient.insurance_number }}</span>
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Actions rapides -->
+        <div style="background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.5rem">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1rem">Actions rapides</div>
+          <div style="display:flex;flex-direction:column;gap:0.75rem">
+            <a href="{% url 'doctors:list' %}" class="btn btn-primary" style="justify-content:center">
+              <i class="fas fa-calendar-plus"></i> Nouveau RDV
+            </a>
+            <a href="{% url 'ai_orientation:suggest' %}" class="btn btn-outline" style="color:var(--navy);border-color:var(--gray-300);justify-content:center">
+              <i class="fas fa-robot"></i> Assistant IA
+            </a>
+            <a href="{% url 'appointments:export_history_pdf' %}" target="_blank" class="btn btn-outline" style="color:var(--teal);border-color:rgba(0,181,163,0.3);justify-content:center">
+              <i class="fas fa-file-pdf"></i> Exporter PDF
+            </a>
+          </div>
+        </div>
+
+        <!-- Notifications importantes -->
+        {% if notifications %}
+        <div style="background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.5rem">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1rem;display:flex;justify-content:space-between;align-items:center">
+            🔔 Notifications
+            <span style="background:var(--teal);color:var(--navy);border-radius:50px;padding:0.1rem 0.5rem;font-size:0.75rem;font-weight:700">{{ notifications|length }}</span>
+          </div>
+          {% for notif in notifications %}
+          <div style="padding:0.75rem 0;border-bottom:1px solid var(--gray-100);display:flex;gap:10px;align-items:flex-start">
+            <div style="width:8px;height:8px;background:var(--teal);border-radius:50%;margin-top:5px;flex-shrink:0"></div>
+            <div style="font-size:0.85rem;color:var(--gray-700)">{{ notif.message }}</div>
+          </div>
+          {% endfor %}
+          <a href="{% url 'notifications:list' %}" style="color:var(--teal);font-size:0.8rem;text-decoration:none;display:block;margin-top:0.75rem">Voir toutes →</a>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

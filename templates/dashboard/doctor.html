@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% block title %}Tableau de bord Médecin{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 68px)">
+  <div style="background:var(--navy);padding:2rem 1.25rem">
+    <a href="{% url 'dashboard:home' %}" class="sidebar-link active"><i class="fas fa-gauge-high"></i> Tableau de bord</a>
+    <a href="{% url 'appointments:list' %}" class="sidebar-link"><i class="fas fa-calendar-check"></i> Rendez-vous</a>
+    <a href="{% url 'dashboard:calendar' %}" class="sidebar-link"><i class="fas fa-calendar-week"></i> Calendrier</a>
+    <a href="{% url 'schedules:manage' %}" class="sidebar-link"><i class="fas fa-calendar"></i> Disponibilités</a>
+    <a href="{% url 'messaging:inbox' %}" class="sidebar-link"><i class="fas fa-envelope"></i> Messagerie</a>
+    <a href="{% url 'notifications:list' %}" class="sidebar-link"><i class="fas fa-bell"></i> Notifications</a>
+    <a href="{% url 'accounts:profile' %}" class="sidebar-link"><i class="fas fa-user"></i> Mon profil</a>
+    <a href="{% url 'accounts:logout' %}" class="sidebar-link" style="color:rgba(239,68,68,0.7)"><i class="fas fa-right-from-bracket"></i> Déconnexion</a>
+  </div>
+
+  <div style="padding:2rem;background:var(--gray-50)">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">Bonjour, {{ doctor }} 👨‍⚕️</h1>
+      <p class="dashboard-subtitle">Voici votre activité du jour — {% now "l d F Y" %}</p>
+    </div>
+
+    <!-- Stats — 8 cards -->
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-teal"><i class="fas fa-calendar-day"></i></div>
+        <div><div class="stat-value">{{ stats.today }}</div><div class="stat-label">Aujourd'hui</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-blue"><i class="fas fa-calendar-week"></i></div>
+        <div><div class="stat-value">{{ stats.week }}</div><div class="stat-label">Cette semaine</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-purple"><i class="fas fa-calendar-check"></i></div>
+        <div><div class="stat-value">{{ stats.total }}</div><div class="stat-label">Total RDV</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-green"><i class="fas fa-user-clock"></i></div>
+        <div><div class="stat-value">{{ stats.pending }}</div><div class="stat-label">Patients à recevoir</div></div>
+      </div>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-green"><i class="fas fa-circle-check"></i></div>
+        <div><div class="stat-value">{{ stats.confirmed }}</div><div class="stat-label">Confirmés</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-orange"><i class="fas fa-hourglass-half"></i></div>
+        <div><div class="stat-value">{{ stats.completed }}</div><div class="stat-label">Terminés</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-red"><i class="fas fa-circle-xmark"></i></div>
+        <div><div class="stat-value">{{ stats.cancelled }}</div><div class="stat-label">Annulés</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-orange"><i class="fas fa-clock"></i></div>
+        <div><div class="stat-value">{{ stats.pending }}</div><div class="stat-label">En attente</div></div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+
+      <!-- Planning aujourd'hui -->
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">📅 Planning d'aujourd'hui</span>
+          <span style="color:var(--gray-500);font-size:0.8rem">{% now "d/m/Y" %}</span>
+        </div>
+        {% if today_appointments %}
+        {% for rdv in today_appointments %}
+        <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;gap:12px">
+          <div style="background:var(--teal-pale);border-radius:10px;padding:0.5rem 0.75rem;text-align:center;min-width:56px">
+            <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--teal)">{{ rdv.time|time:"H:i" }}</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-weight:600;color:var(--navy)">{{ rdv.patient.user.get_full_name }}</div>
+            <div style="font-size:0.8rem;color:var(--gray-500)">{{ rdv.reason|truncatechars:40 }}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span class="badge badge-{{ rdv.status }}">{{ rdv.get_status_display }}</span>
+          </div>
+          <a href="{% url 'appointments:detail' rdv.pk %}" style="color:var(--teal);text-decoration:none"><i class="fas fa-arrow-right"></i></a>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state" style="padding:2rem">
+          <div class="empty-state-icon">🌟</div>
+          <div class="empty-state-title">Journée libre !</div>
+          <div class="empty-state-subtitle">Aucun rendez-vous aujourd'hui.</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Graphique mensuel -->
+      <div style="background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.5rem">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem">
+          Activité (6 derniers mois)
+        </div>
+        <div class="chart-container">
+          <canvas id="activityChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- RDV de la semaine -->
+    <div class="table-card">
+      <div class="table-header">
+        <span class="table-title">📆 Rendez-vous de la semaine</span>
+        <a href="{% url 'dashboard:calendar' %}" style="color:var(--teal);font-size:0.85rem;text-decoration:none">
+          Voir le calendrier →
+        </a>
+      </div>
+      {% if week_appointments %}
+      <table>
+        <thead>
+          <tr>
+            <th>Date & Heure</th>
+            <th>Patient</th>
+            <th>Motif</th>
+            <th>Statut</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rdv in week_appointments %}
+          <tr>
+            <td>
+              <div style="font-weight:600;color:var(--navy)">{{ rdv.date|date:"l d/m" }}</div>
+              <div style="font-size:0.8rem;color:var(--gray-500)">{{ rdv.time|time:"H:i" }}</div>
+            </td>
+            <td style="font-weight:600">{{ rdv.patient.user.get_full_name }}</td>
+            <td style="color:var(--gray-600);max-width:200px">{{ rdv.reason|truncatechars:50 }}</td>
+            <td><span class="badge badge-{{ rdv.status }}">{{ rdv.get_status_display }}</span></td>
+            <td>
+              <a href="{% url 'appointments:detail' rdv.pk %}" style="color:var(--teal);text-decoration:none;font-weight:600">
+                Voir →
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state" style="padding:2rem">
+        <div class="empty-state-icon">📅</div>
+        <div class="empty-state-title">Aucun rendez-vous cette semaine</div>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const ctx = document.getElementById('activityChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: [{% for s in monthly_stats %}'{{ s.month }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+      label: 'Rendez-vous',
+      data: [{% for s in monthly_stats %}{{ s.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+      backgroundColor: 'rgba(0,181,163,0.2)',
+      borderColor: '#00b5a3',
+      borderWidth: 2,
+      borderRadius: 8,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Sans' } } },
+      x: { grid: { display: false }, ticks: { font: { family: 'DM Sans' } } }
+    }
+  }
+});
+</script>
+{% endblock %}

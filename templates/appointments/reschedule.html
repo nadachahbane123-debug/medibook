@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Modifier le rendez-vous{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-container">
+    <div class="breadcrumb">
+      <a href="{% url 'appointments:list' %}">Rendez-vous</a>
+      <span class="breadcrumb-sep">/</span>
+      <a href="{% url 'appointments:detail' appointment.pk %}">RDV #{{ appointment.pk }}</a>
+      <span class="breadcrumb-sep">/</span>
+      <span>Modifier</span>
+    </div>
+    <h1 class="page-header-title">Modifier le rendez-vous</h1>
+    <p class="page-header-subtitle">avec {{ appointment.doctor }} — actuellement le {{ appointment.date|date:"d/m/Y" }} à {{ appointment.time|time:"H:i" }}</p>
+  </div>
+</div>
+
+<section class="section section-gray">
+  <div style="max-width:700px;margin:0 auto">
+
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;gap:12px;align-items:flex-start">
+      <i class="fas fa-triangle-exclamation" style="color:var(--warning);margin-top:2px;flex-shrink:0"></i>
+      <div style="font-size:0.875rem;color:#92400e">
+        <strong>Attention :</strong> Vous pouvez modifier ce rendez-vous uniquement s'il est en attente ou confirmé, au moins 2h avant l'heure prévue. Le médecin sera notifié automatiquement.
+      </div>
+    </div>
+
+    <div class="form-card">
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem">
+        <i class="fas fa-calendar-pen" style="color:var(--teal)"></i> Choisir un nouveau créneau
+      </h3>
+
+      <div class="form-group">
+        <label class="form-label">Nouvelle date</label>
+        <input type="date" id="dateSelect" data-doctor-id="{{ appointment.doctor.pk }}"
+               min="{% now 'Y-m-d' %}" class="form-input">
+      </div>
+
+      <div id="slotsContainer">
+        <p style="color:var(--gray-400);font-size:0.9rem;text-align:center;padding:1rem">
+          Sélectionnez une date pour voir les créneaux disponibles
+        </p>
+      </div>
+
+      <form method="post" id="rescheduleForm" style="margin-top:1.5rem">
+        {% csrf_token %}
+        <input type="hidden" name="slot_id" id="slotInput">
+
+        <div class="form-group">
+          <label class="form-label">Motif de consultation</label>
+          <textarea name="reason" class="form-textarea" rows="3" required>{{ appointment.reason }}</textarea>
+        </div>
+
+        <div style="background:var(--teal-pale);border-radius:var(--radius);padding:1rem;margin-bottom:1.5rem;font-size:0.875rem">
+          <div style="font-weight:600;color:var(--teal);margin-bottom:4px">Récapitulatif de la modification</div>
+          <div style="color:var(--gray-600)">
+            Ancien créneau : <strong>{{ appointment.date|date:"d/m/Y" }} à {{ appointment.time|time:"H:i" }}</strong><br>
+            Nouveau créneau : <strong id="selectedSlot" style="color:var(--teal)">Non sélectionné</strong>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:1rem">
+          <button type="submit" class="btn btn-primary" onclick="return validateReschedule()">
+            <i class="fas fa-check"></i> Confirmer la modification
+          </button>
+          <a href="{% url 'appointments:detail' appointment.pk %}" class="btn btn-outline" style="color:var(--navy);border-color:var(--gray-300)">
+            Annuler
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function validateReschedule() {
+  const slot = document.getElementById('slotInput').value;
+  if (!slot) {
+    alert('Veuillez sélectionner un nouveau créneau.');
+    return false;
+  }
+  return true;
+}
+</script>
+{% endblock %}

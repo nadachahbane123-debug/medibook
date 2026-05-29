@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Connexion{% endblock %}
+
+{% block content %}
+<div style="min-height:calc(100vh - 68px);background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 100%);display:flex;align-items:center;justify-content:center;padding:2rem">
+  <div style="width:100%;max-width:440px">
+
+    <div style="text-align:center;margin-bottom:2rem">
+      <div style="font-size:3rem;margin-bottom:0.5rem">⚕</div>
+      <h1 style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;color:white">Connexion</h1>
+      <p style="color:rgba(255,255,255,0.5);margin-top:0.5rem">Accédez à votre espace MediBook</p>
+    </div>
+
+    <div class="form-card" style="background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1)">
+      <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-group">
+          <label class="form-label" style="color:rgba(255,255,255,0.8)">{{ field.label }}</label>
+          <input type="{{ field.field.widget.input_type }}"
+                 name="{{ field.html_name }}"
+                 id="{{ field.id_for_label }}"
+                 {% if field.value %}value="{{ field.value }}"{% endif %}
+                 class="form-input"
+                 style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.15);color:white"
+                 placeholder="{{ field.label }}">
+          {% if field.errors %}<span class="form-error">{{ field.errors|first }}</span>{% endif %}
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:0.5rem">
+          <i class="fas fa-right-to-bracket"></i> Se connecter
+        </button>
+      </form>
+
+      <div style="text-align:center;margin-top:1.5rem;color:rgba(255,255,255,0.5);font-size:0.9rem">
+        Pas encore de compte ?
+        <a href="{% url 'accounts:register' %}" style="color:var(--teal);text-decoration:none;font-weight:600"> Créer un compte</a>
+      </div>
+      <div style="text-align:center;margin-top:0.75rem;color:rgba(255,255,255,0.4);font-size:0.875rem">
+        <a href="{% url 'accounts:password-reset' %}" style="color:rgba(255,255,255,0.4);text-decoration:none">Mot de passe oublié ?</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% block title %}Accueil{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<section class="hero">
+  <div class="hero-container">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <i class="fas fa-shield-halved"></i> Plateforme médicale sécurisée
+      </div>
+      <h1 class="hero-title">
+        Vos rendez-vous<br>médicaux,
+        <span class="highlight">simplifiés.</span>
+      </h1>
+      <p class="hero-subtitle">
+        MediBook connecte patients et médecins pour une gestion efficace des rendez-vous médicaux.
+        Bénéficiez de notre assistant IA pour vous orienter vers le bon spécialiste.
+      </p>
+      <div class="hero-actions">
+        {% if user.is_authenticated %}
+          <a href="{% url 'dashboard:home' %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-gauge-high"></i> Mon tableau de bord
+          </a>
+          <a href="{% url 'doctors:list' %}" class="btn btn-outline btn-lg">
+            <i class="fas fa-user-doctor"></i> Trouver un médecin
+          </a>
+        {% else %}
+          <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-user-plus"></i> Créer mon compte
+          </a>
+          <a href="{% url 'accounts:login' %}" class="btn btn-outline btn-lg">
+            Connexion
+          </a>
+        {% endif %}
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="num">500+</span>
+          <span class="label">Médecins</span>
+        </div>
+        <div class="hero-stat">
+          <span class="num">12</span>
+          <span class="label">Spécialités</span>
+        </div>
+        <div class="hero-stat">
+          <span class="num">24/7</span>
+          <span class="label">Disponible</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="hero-card-float">
+        <div style="margin-bottom:1.5rem">
+          <div style="color:rgba(255,255,255,0.5);font-size:0.8rem;margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.08em">
+            Recherche rapide
+          </div>
+          <div class="hero-search-bar">
+            <input type="text" id="heroSearch" placeholder="Médecin, spécialité..." class="hero-search-input">
+            <button class="hero-search-btn" id="heroSearchBtn">
+              <i class="fas fa-search"></i>
+            </button>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.75rem">
+          {% load static %}
+          <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem;display:flex;align-items:center;gap:12px">
+            <div style="width:44px;height:44px;background:linear-gradient(135deg,#00b5a3,#00d4bf);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem">❤️</div>
+            <div>
+              <div style="color:white;font-weight:600;font-size:0.9rem">Cardiologie</div>
+              <div style="color:rgba(255,255,255,0.4);font-size:0.75rem">12 médecins disponibles</div>
+            </div>
+            <div style="margin-left:auto;color:rgba(255,255,255,0.3)"><i class="fas fa-chevron-right"></i></div>
+          </div>
+          <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem;display:flex;align-items:center;gap:12px">
+            <div style="width:44px;height:44px;background:linear-gradient(135deg,#3b82f6,#60a5fa);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem">🧠</div>
+            <div>
+              <div style="color:white;font-weight:600;font-size:0.9rem">Neurologie</div>
+              <div style="color:rgba(255,255,255,0.4);font-size:0.75rem">8 médecins disponibles</div>
+            </div>
+            <div style="margin-left:auto;color:rgba(255,255,255,0.3)"><i class="fas fa-chevron-right"></i></div>
+          </div>
+          <div style="background:rgba(0,181,163,0.1);border:1px solid rgba(0,181,163,0.25);border-radius:12px;padding:1rem;display:flex;align-items:center;gap:12px">
+            <div style="width:44px;height:44px;background:linear-gradient(135deg,#0a1628,#132240);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem">🤖</div>
+            <div>
+              <div style="color:#00b5a3;font-weight:600;font-size:0.9rem">Assistant IA</div>
+              <div style="color:rgba(255,255,255,0.4);font-size:0.75rem">Trouvez votre spécialiste</div>
+            </div>
+            <a href="{% url 'ai_orientation:suggest' %}" style="margin-left:auto;color:var(--teal)"><i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Specialties Section -->
+<section class="section section-gray">
+  <div class="section-container">
+    <div class="section-header">
+      <span class="section-label">Spécialités</span>
+      <h2 class="section-title">Toutes vos spécialités médicales</h2>
+      <p class="section-subtitle">Plus de 12 spécialités pour prendre soin de votre santé</p>
+    </div>
+    <div class="specialty-grid">
+      <a href="{% url 'doctors:list' %}?specialty_name=Cardiologie" class="specialty-card">
+        <span class="specialty-icon">❤️</span>
+        <span class="specialty-name">Cardiologie</span>
+      </a>
+      <a href="{% url 'doctors:list' %}?specialty_name=Dermatologie" class="specialty-card">
+        <span class="specialty-icon">🧴</span>
+        <span class="specialty-name">Dermatologie</span>
+      </a>
+      <a href="{% url 'doctors:list' %}?specialty_name=Pédiatrie" class="specialty-card">
+        <span class="specialty-icon">👶</span>
+        <span class="specialty-name">Pédiatrie</span>
+      </a>
+      <a href="{% url 'doctors:list' %}?specialty_name=Gynécologie" class="specialty-card">
+        <span class="specialty-icon">🌸</span>
+        <span class="specialty-name">Gynécologie</span>
+      </a>
+      <a href="{% url 'doctors:list' %}?specialty_name=Ophtalmologie" class="specialty-card">
+        <span class="specialty-icon">👁️</span>
+        <span class="specialty-name">Ophtalmologie</span>
+      </a>
+      <a href="{% url 'doctors:list' %}?specialty_name=ORL" class="specialty-card">
+        <span class="specialty-icon">👂</span>
+        <span class="specialty-name">ORL</span>
+      </a>
+      <a href="{% url 'doctors:list' %}?specialty_name=Dentisterie" class="specialty-card">
+        <span class="specialty-icon">🦷</span>
+        <span class="specialty-name">Dentisterie</span>
+      </a>
+      <a href="{% url 'doctors:list' %}?specialty_name=Neurologie" class="specialty-card">
+        <span class="specialty-icon">🧠</span>
+        <span class="specialty-name">Neurologie</span>
+      </a>
+      <a href="{% url 'doctors:list' %}?specialty_name=Orthopédie" class="specialty-card">
+        <span class="specialty-icon">🦴</span>
+        <span class="specialty-name">Orthopédie</span>
+      </a>
+      <a href="{% url 'doctors:list' %}?specialty_name=Gastroentérologie" class="specialty-card">
+        <span class="specialty-icon">🫀</span>
+        <span class="specialty-name">Gastroentérologie</span>
+      </a>
+      <a href="{% url 'doctors:list' %}?specialty_name=Urologie" class="specialty-card">
+        <span class="specialty-icon">💊</span>
+        <span class="specialty-name">Urologie</span>
+      </a>
+      <a href="{% url 'doctors:list' %}" class="specialty-card">
+        <span class="specialty-icon">🏥</span>
+        <span class="specialty-name">Médecine Générale</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="section">
+  <div class="section-container">
+    <div class="section-header">
+      <span class="section-label">Comment ça marche</span>
+      <h2 class="section-title">3 étapes simples</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;max-width:900px;margin:0 auto">
+      <div style="text-align:center;padding:2rem">
+        <div style="width:64px;height:64px;background:var(--teal-pale);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 1.25rem">🔍</div>
+        <h3 style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:0.5rem">1. Cherchez</h3>
+        <p style="color:var(--gray-500);font-size:0.9rem">Recherchez un médecin par nom ou spécialité, ou utilisez notre IA pour vous orienter.</p>
+      </div>
+      <div style="text-align:center;padding:2rem">
+        <div style="width:64px;height:64px;background:var(--teal-pale);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 1.25rem">📅</div>
+        <h3 style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:0.5rem">2. Réservez</h3>
+        <p style="color:var(--gray-500);font-size:0.9rem">Choisissez un créneau disponible et confirmez votre rendez-vous en quelques clics.</p>
+      </div>
+      <div style="text-align:center;padding:2rem">
+        <div style="width:64px;height:64px;background:var(--teal-pale);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 1.25rem">✅</div>
+        <h3 style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--navy);margin-bottom:0.5rem">3. Consultez</h3>
+        <p style="color:var(--gray-500);font-size:0.9rem">Recevez une confirmation et un rappel. Gérez tout depuis votre tableau de bord.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI Feature Banner -->
+<section class="section" style="background:linear-gradient(135deg,var(--navy),var(--navy-light));padding:4rem 2rem">
+  <div class="section-container" style="display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;max-width:1100px">
+    <div>
+      <span class="section-label" style="background:rgba(0,181,163,0.15);color:var(--teal)">Intelligence Artificielle</span>
+      <h2 style="font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;color:white;margin:1rem 0">
+        Votre assistant IA médical
+      </h2>
+      <p style="color:rgba(255,255,255,0.65);line-height:1.8;margin-bottom:2rem">
+        Décrivez vos symptômes en langage naturel et notre IA analyse votre texte pour vous orienter vers la spécialité médicale la plus adaptée. Basé sur TF-IDF et similarité cosinus.
+      </p>
+      <a href="{% url 'ai_orientation:suggest' %}" class="btn btn-primary btn-lg">
+        <i class="fas fa-robot"></i> Essayer l'assistant IA
+      </a>
+    </div>
+    <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:1.5rem">
+      <div style="color:rgba(255,255,255,0.4);font-size:0.75rem;margin-bottom:1rem;text-transform:uppercase;letter-spacing:0.08em">Exemple de conversation</div>
+      <div style="display:flex;flex-direction:column;gap:0.75rem">
+        <div style="background:rgba(255,255,255,0.08);border-radius:12px 12px 12px 4px;padding:0.75rem 1rem;color:rgba(255,255,255,0.8);font-size:0.875rem;max-width:85%">
+          Bonjour ! Décrivez vos symptômes pour que je vous oriente. 🤖
+        </div>
+        <div style="background:linear-gradient(135deg,var(--teal),var(--teal-light));border-radius:12px 12px 4px 12px;padding:0.75rem 1rem;color:var(--navy);font-size:0.875rem;font-weight:500;max-width:85%;align-self:flex-end">
+          J'ai des douleurs thoraciques et des palpitations depuis 3 jours
+        </div>
+        <div style="background:rgba(0,181,163,0.1);border:1px solid rgba(0,181,163,0.2);border-radius:12px 12px 12px 4px;padding:1rem;color:white;font-size:0.875rem;max-width:85%">
+          ❤️ <strong>Cardiologie</strong> recommandée<br>
+          <span style="color:rgba(255,255,255,0.6);font-size:0.8rem">Confiance: 78% · Urgence: modérée ⚠️</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

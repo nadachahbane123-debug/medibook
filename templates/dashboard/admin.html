@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% block title %}Tableau de bord Admin{% endblock %}
+{% block extra_css %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 68px)">
+  <div style="background:var(--navy);padding:2rem 1.25rem">
+    <div style="font-size:0.7rem;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem;padding:0 0.5rem">Tableau de bord</div>
+    <a href="{% url 'dashboard:home' %}" class="sidebar-link active"><i class="fas fa-gauge-high"></i> Vue globale</a>
+    <a href="{% url 'dashboard:advanced_stats' %}" class="sidebar-link"><i class="fas fa-chart-line"></i> Stats avancées</a>
+    <a href="{% url 'dashboard:ai_stats' %}" class="sidebar-link"><i class="fas fa-robot"></i> Stats IA</a>
+    <div style="font-size:0.7rem;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;margin:1.25rem 0 0.75rem;padding:0 0.5rem">Gestion</div>
+    <a href="{% url 'dashboard:manage_users' %}" class="sidebar-link"><i class="fas fa-users"></i> Utilisateurs</a>
+    <a href="{% url 'dashboard:manage_doctors' %}" class="sidebar-link"><i class="fas fa-user-doctor"></i> Médecins</a>
+    <a href="{% url 'dashboard:manage_specialties' %}" class="sidebar-link"><i class="fas fa-stethoscope"></i> Spécialités</a>
+    <a href="{% url 'appointments:list' %}" class="sidebar-link"><i class="fas fa-calendar-check"></i> Rendez-vous</a>
+    <div style="font-size:0.7rem;font-weight:700;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:0.1em;margin:1.25rem 0 0.75rem;padding:0 0.5rem">Paramètres</div>
+    <a href="/admin/" class="sidebar-link"><i class="fas fa-screwdriver-wrench"></i> Administration Django</a>
+    <a href="/admin/auth/group/" class="sidebar-link"><i class="fas fa-shield-halved"></i> Sécurité & Rôles</a>
+    <div style="margin-top:auto;padding-top:2rem">
+      <a href="{% url 'accounts:logout' %}" class="sidebar-link" style="color:rgba(239,68,68,0.7)"><i class="fas fa-right-from-bracket"></i> Déconnexion</a>
+    </div>
+  </div>
+
+  <div style="padding:2rem;background:var(--gray-50)">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">Administration MediBook 🏥</h1>
+      <p class="dashboard-subtitle">Statistiques globales de la plateforme</p>
+    </div>
+
+    <!-- KPIs -->
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:1.5rem">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-blue"><i class="fas fa-users"></i></div>
+        <div><div class="stat-value">{{ stats.total_patients }}</div><div class="stat-label">Patients</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-teal"><i class="fas fa-user-doctor"></i></div>
+        <div><div class="stat-value">{{ stats.total_doctors }}</div><div class="stat-label">Médecins actifs</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-green"><i class="fas fa-calendar-check"></i></div>
+        <div><div class="stat-value">{{ stats.total_appointments }}</div><div class="stat-label">Total RDV</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-orange"><i class="fas fa-calendar-day"></i></div>
+        <div><div class="stat-value">{{ stats.today_appointments }}</div><div class="stat-label">Aujourd'hui</div></div>
+      </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+      <div style="background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.5rem">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem">Rendez-vous (7 derniers jours)</div>
+        <div class="chart-container"><canvas id="weekChart"></canvas></div>
+      </div>
+      <div style="background:var(--white);border-radius:var(--radius-lg);border:1px solid var(--gray-200);padding:1.5rem">
+        <div style="font-family:'Syne',sans-serif;font-weight:700;color:var(--navy);margin-bottom:1.5rem">Rendez-vous par statut</div>
+        <div class="chart-container" style="height:220px"><canvas id="statusChart"></canvas></div>
+        <!-- Détail statuts -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:1rem">
+          <div style="background:var(--gray-50);border-radius:8px;padding:8px 12px;text-align:center">
+            <div style="font-size:1.1rem;font-weight:700;color:#10b981">{{ stats.confirmed }}</div>
+            <div style="font-size:0.75rem;color:var(--gray-500)">Confirmés</div>
+          </div>
+          <div style="background:var(--gray-50);border-radius:8px;padding:8px 12px;text-align:center">
+            <div style="font-size:1.1rem;font-weight:700;color:#f59e0b">{{ stats.pending }}</div>
+            <div style="font-size:0.75rem;color:var(--gray-500)">En attente</div>
+          </div>
+          <div style="background:var(--gray-50);border-radius:8px;padding:8px 12px;text-align:center">
+            <div style="font-size:1.1rem;font-weight:700;color:#ef4444">{{ stats.cancelled }}</div>
+            <div style="font-size:0.75rem;color:var(--gray-500)">Annulés</div>
+          </div>
+          <div style="background:var(--gray-50);border-radius:8px;padding:8px 12px;text-align:center">
+            <div style="font-size:1.1rem;font-weight:700;color:#3b82f6">{{ stats.completed }}</div>
+            <div style="font-size:0.75rem;color:var(--gray-500)">Terminés</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tableaux -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+
+      <!-- Top spécialités -->
+      <div class="table-card">
+        <div class="table-header"><span class="table-title">🏥 Spécialités les plus demandées</span></div>
+        <table>
+          <thead><tr><th>Spécialité</th><th>RDV</th><th>Part</th></tr></thead>
+          <tbody>
+            {% for s in top_specialties %}
+            <tr>
+              <td><span style="font-weight:600">{{ s.icon }} {{ s.name }}</span></td>
+              <td><span class="badge badge-confirmed">{{ s.rdv_count }}</span></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="flex:1;height:6px;background:var(--gray-100);border-radius:3px;overflow:hidden;min-width:60px">
+                    <div style="height:100%;background:var(--teal);border-radius:3px;width:{% if stats.total_appointments %}{{ s.rdv_count|floatformat:0 }}{% else %}0{% endif %}%"></div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" style="text-align:center;color:var(--gray-400)">Aucune donnée</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Médecins les plus actifs -->
+      <div class="table-card">
+        <div class="table-header"><span class="table-title">👨‍⚕️ Médecins les plus sollicités</span></div>
+        <table>
+          <thead><tr><th>Médecin</th><th>RDV</th><th>Note</th></tr></thead>
+          <tbody>
+            {% for d in top_doctors %}
+            <tr>
+              <td>
+                <div style="font-weight:600">{{ d }}</div>
+                <div style="font-size:0.8rem;color:var(--gray-500)">{{ d.specialty.name|default:"—" }}</div>
+              </td>
+              <td>{{ d.rdv_count }}</td>
+              <td>{% if d.rating > 0 %}<span style="color:var(--accent-orange)">★</span> {{ d.rating }}{% else %}—{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- RDV par spécialité — tableau dédié -->
+    <div class="table-card">
+      <div class="table-header">
+        <span class="table-title">📊 Rendez-vous par spécialité</span>
+        <span style="color:var(--gray-400);font-size:0.8rem">Total : {{ stats.total_appointments }} RDV</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Spécialité</th><th>Total RDV</th><th>Confirmés</th><th>Terminés</th><th>Annulés</th><th>Progression</th></tr>
+        </thead>
+        <tbody>
+          {% for s in top_specialties %}
+          <tr>
+            <td><span style="font-weight:600">{{ s.icon }} {{ s.name }}</span></td>
+            <td style="font-weight:700;color:var(--navy)">{{ s.rdv_count }}</td>
+            <td><span style="color:#10b981;font-weight:600">{{ s.confirmed_count|default:0 }}</span></td>
+            <td><span style="color:#3b82f6;font-weight:600">{{ s.completed_count|default:0 }}</span></td>
+            <td><span style="color:#ef4444;font-weight:600">{{ s.cancelled_count|default:0 }}</span></td>
+            <td style="min-width:120px">
+              <div style="height:8px;background:var(--gray-100);border-radius:4px;overflow:hidden">
+                {% if stats.total_appointments and stats.total_appointments > 0 %}
+                <div style="height:100%;background:linear-gradient(90deg,var(--teal),var(--teal-light));border-radius:4px;width:{{ s.rdv_count|floatformat:0 }}%"></div>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" style="text-align:center;color:var(--gray-400)">Aucune donnée</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const weekCtx = document.getElementById('weekChart').getContext('2d');
+new Chart(weekCtx, {
+  type: 'line',
+  data: {
+    labels: [{% for d in weekly_data %}'{{ d.day }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+      label: 'RDV',
+      data: [{% for d in weekly_data %}{{ d.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+      borderColor: '#00b5a3', backgroundColor: 'rgba(0,181,163,0.1)',
+      borderWidth: 2.5, fill: true, tension: 0.4,
+      pointBackgroundColor: '#00b5a3', pointRadius: 5
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Confirmé', 'En attente', 'Annulé', 'Terminé'],
+    datasets: [{
+      data: [{{ stats.confirmed }}, {{ stats.pending }}, {{ stats.cancelled }}, {{ stats.completed }}],
+      backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#3b82f6'],
+      borderWidth: 0,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { family: 'DM Sans' }, padding: 12, boxWidth: 12 } }
+    },
+    cutout: '65%'
+  }
+});
+</script>
+{% endblock %}
