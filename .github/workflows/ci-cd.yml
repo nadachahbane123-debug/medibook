@@ -53,8 +53,8 @@ jobs:
           SECRET_KEY: ci-test-secret-key
           DJANGO_DEBUG: 1
           MYSQL_DATABASE: medibook_test
-          MYSQL_USER: medibook_user
-          MYSQL_PASSWORD: medibook_test_pass
+          MYSQL_USER: root
+          MYSQL_PASSWORD: test_root
           MYSQL_HOST: 127.0.0.1
           MYSQL_PORT: 3306
           ALLOWED_HOSTS: localhost,127.0.0.1
@@ -65,8 +65,8 @@ jobs:
           SECRET_KEY: ci-test-secret-key
           DJANGO_DEBUG: 1
           MYSQL_DATABASE: medibook_test
-          MYSQL_USER: medibook_user
-          MYSQL_PASSWORD: medibook_test_pass
+          MYSQL_USER: root
+          MYSQL_PASSWORD: test_root
           MYSQL_HOST: 127.0.0.1
           MYSQL_PORT: 3306
           ALLOWED_HOSTS: localhost,127.0.0.1
@@ -77,8 +77,8 @@ jobs:
           SECRET_KEY: ci-test-secret-key
           DJANGO_DEBUG: 1
           MYSQL_DATABASE: medibook_test
-          MYSQL_USER: medibook_user
-          MYSQL_PASSWORD: medibook_test_pass
+          MYSQL_USER: root
+          MYSQL_PASSWORD: test_root
           MYSQL_HOST: 127.0.0.1
           MYSQL_PORT: 3306
           ALLOWED_HOSTS: localhost,127.0.0.1
