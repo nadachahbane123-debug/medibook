@@ -432,7 +432,6 @@ def save_user(request):
         password = request.POST.get('password', '').strip()
 
         if user_id:
-            # Modifier
             try:
                 u = User.objects.get(pk=user_id)
                 u.first_name = first_name
@@ -447,7 +446,6 @@ def save_user(request):
             except User.DoesNotExist:
                 messages.error(request, 'Utilisateur introuvable.')
         else:
-            # Créer
             if User.objects.filter(username=username).exists():
                 messages.error(request, f'Le username "{username}" est déjà pris.')
             else:
@@ -492,8 +490,8 @@ def save_doctor(request):
         last_name = request.POST.get('last_name', '').strip()
         email = request.POST.get('email', '').strip()
         specialty_id = request.POST.get('specialty')
-        years_experience = request.POST.get('years_experience', 0)
-        consultation_fee = request.POST.get('consultation_fee', 0)
+        years_experience = request.POST.get('years_experience', '').strip()
+        consultation_fee = request.POST.get('consultation_fee', '').strip()
         cabinet_address = request.POST.get('cabinet_address', '').strip()
         license_number = request.POST.get('license_number', '').strip()
         password = request.POST.get('password', '').strip()
@@ -509,8 +507,10 @@ def save_doctor(request):
                 doc.user.save()
                 if specialty_id:
                     doc.specialty = Specialty.objects.get(pk=specialty_id)
-                doc.years_experience = years_experience
-                doc.consultation_fee = consultation_fee
+                if years_experience:
+                    doc.years_experience = years_experience
+                if consultation_fee:
+                    doc.consultation_fee = consultation_fee
                 doc.cabinet_address = cabinet_address
                 doc.license_number = license_number
                 doc.save()
@@ -541,8 +541,10 @@ def save_doctor(request):
             doc = Doctor.objects.create(user=user)
             if specialty_id:
                 doc.specialty = Specialty.objects.get(pk=specialty_id)
-            doc.years_experience = years_experience
-            doc.consultation_fee = consultation_fee
+            if years_experience:
+                doc.years_experience = years_experience
+            if consultation_fee:
+                doc.consultation_fee = consultation_fee
             doc.cabinet_address = cabinet_address
             doc.license_number = license_number
             doc.save()
